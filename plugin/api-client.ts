@@ -35,6 +35,8 @@ export interface ApiClient {
     signal?: AbortSignal,
     extraHeaders?: Record<string, string>,
   ): Promise<unknown>;
+  /** GET JSON from an endpoint. Returns parsed JSON. */
+  get(url: string, signal?: AbortSignal): Promise<unknown>;
   /** GET a binary resource. Returns arrayBuffer. */
   getBuffer(url: string, signal?: AbortSignal): Promise<ArrayBuffer>;
 }
@@ -82,6 +84,24 @@ export function createApiClient(
     return response.json();
   }
 
+  async function get(url: string, signal?: AbortSignal): Promise<unknown> {
+    const response = await fetchFn(url, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+      signal,
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text().catch(() => "(no body)");
+      throw new PluginError(
+        `API returned ${response.status}: ${errorBody.slice(0, 300)}`,
+        "HTTP_ERROR",
+        { status: response.status, retryable: response.status >= 500 },
+      );
+    }
+
+    return response.json();
+  }
+
   async function getBuffer(url: string, signal?: AbortSignal): Promise<ArrayBuffer> {
     const response = await fetchFn(url, { signal });
 
@@ -96,5 +116,5 @@ export function createApiClient(
     return response.arrayBuffer();
   }
 
-  return { post, getBuffer };
+  return { post, get, getBuffer };
 }

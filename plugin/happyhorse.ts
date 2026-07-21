@@ -123,25 +123,12 @@ async function pollTask(
   maxPollAttempts: number,
 ): Promise<string> {
   const pollUrl = `${taskBaseUrl}/${taskId}`;
+  const client = createApiClient(apiKey, fetchFn);
 
   for (let attempt = 0; attempt < maxPollAttempts; attempt++) {
     await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
 
-    const response = await fetchFn(pollUrl, {
-      headers: { Authorization: `Bearer ${apiKey}` },
-      signal: AbortSignal.timeout(30_000),
-    });
-
-    if (!response.ok) {
-      const errorBody = await response.text().catch(() => "(no body)");
-      throw new PluginError(
-        `Task poll returned ${response.status}: ${errorBody.slice(0, 300)}`,
-        "POLL_ERROR",
-        { status: response.status, retryable: response.status >= 500 },
-      );
-    }
-
-    const data: unknown = await response.json();
+    const data: unknown = await client.get(pollUrl, AbortSignal.timeout(30_000));
     if (!isRecord(data)) {
       throw new PluginError("Unexpected task poll response format", "PARSE_ERROR");
     }

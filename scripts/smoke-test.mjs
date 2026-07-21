@@ -27,7 +27,7 @@
  * @module smoke-test
  */
 
-import { readFileSync, existsSync } from "node:fs";
+import { readConfigApiKey } from "./lib/read-config-key.mjs";
 
 // ─── Args & config ──────────────────────────────────────────────────────────
 
@@ -282,24 +282,7 @@ if (args.help) {
   process.exit(0);
 }
 
-function resolveConfigApiKey() {
-  try {
-    const home = process.env.HOME ?? process.env.USERPROFILE ?? "~";
-    const configPath = `${home}/.config/opencode/opencode.json`;
-    if (!existsSync(configPath)) return undefined;
-    const raw = readFileSync(configPath, "utf8");
-    const config = JSON.parse(raw);
-    const apiKey = config?.provider?.qwencloud?.options?.apiKey;
-    if (typeof apiKey === "string" && !apiKey.startsWith("{")) {
-      return apiKey.trim() || undefined;
-    }
-    return undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-const apiKey = process.env.QWENCLOUD_API_KEY?.trim() || resolveConfigApiKey();
+const apiKey = process.env.QWENCLOUD_API_KEY?.trim() || readConfigApiKey();
 if (!apiKey) {
   console.error("✗ QWENCLOUD_API_KEY is not set.");
   console.error("  Set the env var or use /connect in opencode to store an inline key");

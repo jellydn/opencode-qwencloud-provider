@@ -32,14 +32,23 @@ describe("generateAndDownloadHappyHorseVideo", () => {
   });
 
   it("throws when no API key is provided", async () => {
-    await expect(() =>
-      generateAndDownloadHappyHorseVideo("a sunset", "/tmp", {
-        apiKey: "",
-        fetchImpl: fetchMock as any,
-        pollIntervalMs: 1,
-        maxPollAttempts: 1,
-      }),
-    ).rejects.toThrow("No QwenCloud API key");
+    const origHome = process.env.HOME;
+    const origKey = process.env.QWENCLOUD_API_KEY;
+    process.env.HOME = "/nonexistent";
+    delete process.env.QWENCLOUD_API_KEY;
+    try {
+      await expect(() =>
+        generateAndDownloadHappyHorseVideo("a sunset", "/tmp", {
+          apiKey: "",
+          fetchImpl: fetchMock as any,
+          pollIntervalMs: 1,
+          maxPollAttempts: 1,
+        }),
+      ).rejects.toThrow("No QwenCloud API key");
+    } finally {
+      process.env.HOME = origHome;
+      if (origKey !== undefined) process.env.QWENCLOUD_API_KEY = origKey;
+    }
   });
 
   it("throws for unsupported model", async () => {

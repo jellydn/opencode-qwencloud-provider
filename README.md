@@ -9,10 +9,11 @@ OpenAI-compatible Chat Completions API on the Token Plan.
 Unlike the sister project
 [`pi-qwencloud-provider`](https://github.com/jellydn/pi-qwencloud-provider) (a
 TypeScript extension for the `pi` coding agent), this package provides:
+
 - A **config-only** chat provider (`opencode.json` + `@ai-sdk/openai-compatible`)
 - A **runtime plugin** (`plugin/`) with Wan/HappyHorse custom tools and slash commands
-No `registerProvider` API — opencode's provider and plugin systems handle
-registration natively.
+  No `registerProvider` API — opencode's provider and plugin systems handle
+  registration natively.
 
 ## ✨ Features
 
@@ -75,10 +76,10 @@ uses the env-var approach; an inline-key fallback lives in
     "qwencloud": {
       "options": {
         "baseURL": "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1",
-        "apiKey": "{env:QWENCLOUD_API_KEY}"
-      }
-    }
-  }
+        "apiKey": "{env:QWENCLOUD_API_KEY}",
+      },
+    },
+  },
 }
 ```
 
@@ -120,10 +121,10 @@ paste your key directly:
     "qwencloud": {
       "options": {
         "baseURL": "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1",
-        "apiKey": "PASTE_YOUR_QWENCLOUD_API_KEY_HERE"
-      }
-    }
-  }
+        "apiKey": "PASTE_YOUR_QWENCLOUD_API_KEY_HERE",
+      },
+    },
+  },
 }
 ```
 
@@ -136,14 +137,14 @@ or version-controlled setup.
 These are the **chat-completions** models exposed by the config. Model IDs must
 match the `id` returned by QwenCloud's `GET /v1/models` endpoint.
 
-| Model                    | Model ID              | Context | Reasoning |
-| ------------------------ | --------------------- | ------- | --------- |
-| Qwen3.8 Max Preview      | `qwen3.8-max-preview` | 262K    | ✅        |
-| Qwen3.7 Max              | `qwen3.7-max`         | 262K    | ✅        |
-| Qwen3.7 Plus             | `qwen3.7-plus`        | 1M      | ✅        |
-| Qwen3.6 Flash            | `qwen3.6-flash`       | 131K    | ✅        |
-| DeepSeek V4 Pro          | `deepseek-v4-pro`     | 1M      | ✅        |
-| GLM-5.2                  | `glm-5.2`             | 200K    | ✅        |
+| Model               | Model ID              | Context | Reasoning |
+| ------------------- | --------------------- | ------- | --------- |
+| Qwen3.8 Max Preview | `qwen3.8-max-preview` | 262K    | ✅        |
+| Qwen3.7 Max         | `qwen3.7-max`         | 262K    | ✅        |
+| Qwen3.7 Plus        | `qwen3.7-plus`        | 1M      | ✅        |
+| Qwen3.6 Flash       | `qwen3.6-flash`       | 131K    | ✅        |
+| DeepSeek V4 Pro     | `deepseek-v4-pro`     | 1M      | ✅        |
+| GLM-5.2             | `glm-5.2`             | 200K    | ✅        |
 
 > **Note on context windows & pricing:** QwenCloud is not currently listed in
 > the [Models.dev](https://models.dev) registry that opencode merges for
@@ -159,7 +160,7 @@ match the `id` returned by QwenCloud's `GET /v1/models` endpoint.
 
 QwenCloud accepts a `reasoning_effort` parameter (`low|medium|high|max`).
 opencode passes model-level `options` through to the underlying AI SDK, so you
-*may* be able to pin a non-default effort per model — though the exact option
+_may_ be able to pin a non-default effort per model — though the exact option
 name (`reasoningEffort` vs. a `variants` entry) depends on what
 `@ai-sdk/openai-compatible` forwards, so some experimentation may be needed:
 
@@ -170,11 +171,11 @@ name (`reasoningEffort` vs. a `variants` entry) depends on what
       "models": {
         "deepseek-v4-pro": {
           "name": "DeepSeek V4 Pro",
-          "options": { "reasoningEffort": "high" }
-        }
-      }
-    }
-  }
+          "options": { "reasoningEffort": "high" },
+        },
+      },
+    },
+  },
 }
 ```
 
@@ -226,14 +227,15 @@ Once published, add to your opencode.json:
   "plugin": ["opencode-qwencloud-provider"]
 }
 ```
+
 opencode installs npm plugins automatically at startup via Bun. No manual
 copy needed.
 
 ### Wan image generation
 
-| Model             | Description          | Sizes         |
-| ----------------- | -------------------- | ------------- |
-| `wan2.7-image`    | Text-to-image (default) | 1K, 2K, 4K  |
+| Model              | Description                  | Sizes      |
+| ------------------ | ---------------------------- | ---------- |
+| `wan2.7-image`     | Text-to-image (default)      | 1K, 2K, 4K |
 | `wan2.7-image-pro` | Higher quality text-to-image | 1K, 2K, 4K |
 
 Synchronous API — images are generated and saved to the current working
@@ -242,8 +244,8 @@ plugin downloads and saves them to disk automatically.
 
 ### HappyHorse video generation
 
-| Model                | Description            | Duration  |
-| -------------------- | ---------------------- | --------- |
+| Model                | Description             | Duration |
+| -------------------- | ----------------------- | -------- |
 | `happyhorse-1.1-t2v` | Text-to-video (default) | 3–15s    |
 | `happyhorse-1.1-i2v` | Image-to-video          | 3–15s    |
 | `happyhorse-1.1-r2v` | Reference-to-video      | 3–15s    |
@@ -282,10 +284,10 @@ opencode --model qwencloud/qwen3.7-plus
 
 ## 🔧 Environment variables
 
-| Variable              | Description                       | Default                                                                  |
-| --------------------- | --------------------------------- | ------------------------------------------------------------------------ |
-| `QWENCLOUD_API_KEY`   | Your QwenCloud API key (optional if using `/connect` for the plugin) | —                                                                        |
-| `QWENCLOUD_API_BASE`  | Override the API base URL         | `https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1` |
+| Variable             | Description                                                          | Default                                                                  |
+| -------------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `QWENCLOUD_API_KEY`  | Your QwenCloud API key (optional if using `/connect` for the plugin) | —                                                                        |
+| `QWENCLOUD_API_BASE` | Override the API base URL                                            | `https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1` |
 
 ## 📜 Scripts
 
@@ -369,31 +371,31 @@ This repo is the **opencode** counterpart to
 (the `pi` coding agent extension). Both target the same QwenCloud Token Plan
 API, but differ in shape:
 
-|                         | `pi-qwencloud-provider`              | `opencode-qwencloud-provider`            |
-| ----------------------- | ------------------------------------- | ---------------------------------------- |
-| Target agent            | `pi` (`@earendil-works/pi-coding-agent`) | opencode (`sst/opencode`)               |
-| Form factor             | TypeScript extension package          | JSON config + TypeScript plugin + scripts |
-| Provider registration   | `pi.registerProvider("qw", …)`        | `provider.qwencloud` in `opencode.json`  |
-| Model discovery         | Dynamic `/models` fetch at startup    | Static list, refreshable via script      |
-| Auth                    | env var, `/login`, or `auth.json`     | `{env:QWENCLOUD_API_KEY}`, inline key, or `/connect` |
-| Wan / HappyHorse        | ✅ via `/wan` & `/happyhorse` commands | ✅ via `wan`/`happyhorse` custom tools + slash commands |
-| Reasoning effort        | 6-level thinking map per model        | `options.reasoningEffort` per model      |
+|                       | `pi-qwencloud-provider`                  | `opencode-qwencloud-provider`                           |
+| --------------------- | ---------------------------------------- | ------------------------------------------------------- |
+| Target agent          | `pi` (`@earendil-works/pi-coding-agent`) | opencode (`sst/opencode`)                               |
+| Form factor           | TypeScript extension package             | JSON config + TypeScript plugin + scripts               |
+| Provider registration | `pi.registerProvider("qw", …)`           | `provider.qwencloud` in `opencode.json`                 |
+| Model discovery       | Dynamic `/models` fetch at startup       | Static list, refreshable via script                     |
+| Auth                  | env var, `/login`, or `auth.json`        | `{env:QWENCLOUD_API_KEY}`, inline key, or `/connect`    |
+| Wan / HappyHorse      | ✅ via `/wan` & `/happyhorse` commands   | ✅ via `wan`/`happyhorse` custom tools + slash commands |
+| Reasoning effort      | 6-level thinking map per model           | `options.reasoningEffort` per model                     |
 
 ## 🛠 Developer tooling
 
-| Command                    | Description                                   |
-| -------------------------- | --------------------------------------------- |
-| `npm run lint`             | Lint with oxlint (TypeScript, unicorn, oxc, import) |
-| `npm run format`           | Auto-format with oxfmt                        |
-| `npm run format:check`     | Check formatting without modifying files      |
-| `npm run typecheck`        | TypeScript type-checking (`tsc --noEmit`)      |
-| `npm test`                 | Run unit tests (vitest, mock fetch)            |
-| `npm run build`            | Compile plugin TypeScript to `dist/`           |
-| `npm run release`          | Bump version, commit, push, and tag (bumpp)    |
-| `npm run release:patch`    | Release a patch version bump                  |
-| `npm run release:minor`    | Release a minor version bump                  |
-| `npm run release:major`    | Release a major version bump                  |
-| `npm run pub`              | Publish to npm                                |
+| Command                 | Description                                           |
+| ----------------------- | ----------------------------------------------------- |
+| `npm run lint`          | Lint with oxlint (TypeScript, unicorn, oxc, import)   |
+| `npm run format`        | Auto-format with oxfmt                                |
+| `npm run format:check`  | Check formatting without modifying files              |
+| `npm run typecheck`     | TypeScript type-checking (`tsc --noEmit`)             |
+| `npm test`              | Run unit tests (vitest, mock fetch)                   |
+| `npm run build`         | Compile plugin TypeScript to `dist/` + `dist/plugin/` |
+| `npm run release`       | Bump version, commit, push, and tag (bumpp)           |
+| `npm run release:patch` | Release a patch version bump                          |
+| `npm run release:minor` | Release a minor version bump                          |
+| `npm run release:major` | Release a major version bump                          |
+| `npm run pub`           | Publish to npm                                        |
 
 CI ([validate workflow](https://github.com/jellydn/opencode-qwencloud-provider/actions/workflows/validate.yml))
 runs on every push and PR: config validation → lint + format check →

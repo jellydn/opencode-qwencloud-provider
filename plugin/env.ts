@@ -56,9 +56,24 @@ export function resolveApiBase(env: Record<string, string | undefined> = process
 }
 
 /** Resolve the API key from the QWENCLOUD_API_KEY env var. */
-export function resolveApiKey(env: Record<string, string | undefined> = process.env): string | undefined {
+export function resolveApiKey(
+  env: Record<string, string | undefined> = process.env,
+): string | undefined {
   const key = env[ENV_API_KEY]?.trim();
   return key || undefined;
+}
+
+/**
+ * Resolve the API key with an optional override.  Returns the resolved key
+ * or throws if no key is available.  The override (e.g. from plugin options)
+ * takes precedence over the environment variable.
+ */
+export function requireApiKey(override?: string): string {
+  const key = (override?.trim() || resolveApiKey()) ?? "";
+  if (!key) {
+    throw new Error("No QwenCloud API key found. Set QWENCLOUD_API_KEY.");
+  }
+  return key;
 }
 
 /**

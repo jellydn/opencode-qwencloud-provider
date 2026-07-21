@@ -38,17 +38,14 @@ export const QwenCloudWanPlugin: Plugin = async (ctx) => {
           "Saves the image to disk and returns the local file path. " +
           "Use this when the user asks to generate, create, or draw an image.",
         args: {
-          prompt: tool.schema.string().describe(
-            "Image description / prompt describing what to generate",
-          ),
+          prompt: tool.schema
+            .string()
+            .describe("Image description / prompt describing what to generate"),
           model: tool.schema
             .string()
             .optional()
             .describe("Wan model: wan2.7-image (default) or wan2.7-image-pro"),
-          size: tool.schema
-            .string()
-            .optional()
-            .describe("Output size: 1K (default), 2K, or 4K"),
+          size: tool.schema.string().optional().describe("Output size: 1K (default), 2K, or 4K"),
         },
         async execute(args, toolCtx) {
           const outputDir = toolCtx.directory ?? fallbackDir;
@@ -87,9 +84,9 @@ export const QwenCloudHappyHorsePlugin: Plugin = async (ctx) => {
           "Saves the video to disk and returns the local file path. " +
           "Use this when the user asks to generate, create, or make a video.",
         args: {
-          prompt: tool.schema.string().describe(
-            "Video description / prompt describing what to generate",
-          ),
+          prompt: tool.schema
+            .string()
+            .describe("Video description / prompt describing what to generate"),
           model: tool.schema
             .string()
             .optional()
@@ -109,15 +106,11 @@ export const QwenCloudHappyHorsePlugin: Plugin = async (ctx) => {
         async execute(args, toolCtx) {
           const outputDir = toolCtx.directory ?? fallbackDir;
 
-          const result = await generateAndDownloadHappyHorseVideo(
-            args.prompt,
-            outputDir,
-            {
-              model: args.model,
-              imageUrl: args.imageUrl,
-              duration: args.duration,
-            },
-          );
+          const result = await generateAndDownloadHappyHorseVideo(args.prompt, outputDir, {
+            model: args.model,
+            imageUrl: args.imageUrl,
+            duration: args.duration,
+          });
 
           return {
             title: "HappyHorse video generated",

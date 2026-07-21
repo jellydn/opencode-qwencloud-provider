@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- oxlint (`.oxlintrc.json`) with typescript, unicorn, oxc, import plugins.
+- oxfmt (`.oxfmtrc.json`) for consistent code formatting.
+- bumpp (`^12.0.0`) for automated version management with `npm run release`
+  (auto-detect) and `release:patch/minor/major` variants.
+- CI/CD: expanded `validate` workflow to 3 parallel jobs (validate configs,
+  lint+format, typecheck+test) on every push/PR.
+- CI/CD: `release` workflow publishes to npm on `v*` tags with provenance.
+- Developer tooling section in README (lint, format, release commands) and
+  updated AGENTS.md with CI/conventions.
+
+## [0.1.0] — 2026-07-21
+
+### Added
+
 - Initial opencode provider config for QwenCloud (`opencode.json`) exposing six
   chat-completions models: `qwen3.8-max-preview`, `qwen3.7-max`, `qwen3.7-plus`,
   `qwen3.6-flash`, `deepseek-v4-pro`, `glm-5.2`.

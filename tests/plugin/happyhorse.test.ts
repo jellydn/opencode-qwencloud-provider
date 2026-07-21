@@ -141,17 +141,17 @@ describe("generateAndDownloadHappyHorseVideo", () => {
       json: async () => makeFailedResponse("generation failed"),
     });
 
-    // Wrap advance+await so the rejection is caught by expect's async wrapper
-    await expect(async () => {
-      const promise = generateAndDownloadHappyHorseVideo("a sunset", "/tmp", {
-        apiKey: FAKE_KEY,
-        fetchImpl: fetchMock as any,
-        pollIntervalMs: 100,
-        maxPollAttempts: 5,
-      });
-      await vi.advanceTimersByTimeAsync(200);
-      await promise;
-    }).rejects.toThrow(/failed/);
+    const promise = generateAndDownloadHappyHorseVideo("a sunset", "/tmp", {
+      apiKey: FAKE_KEY,
+      fetchImpl: fetchMock as any,
+      pollIntervalMs: 100,
+      maxPollAttempts: 5,
+    });
+
+    const assertion = expect(promise).rejects.toThrow(/failed/);
+
+    await vi.advanceTimersByTimeAsync(200);
+    await assertion;
   });
 
   it("throws on submit HTTP error", async () => {

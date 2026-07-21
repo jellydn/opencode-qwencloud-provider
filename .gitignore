@@ -19,3 +19,4 @@ npm-debug.log*
 .env
 .env.local
 .envrc
+/dist/plugin

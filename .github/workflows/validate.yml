@@ -28,6 +28,49 @@ jobs:
         with:
           node-version: 20
 
-      # No dependencies or lockfile in this repo — validate.mjs is pure stdlib.
       - name: Run validate
         run: node scripts/validate.mjs
+
+  lint:
+    name: Lint & format
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run oxlint
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+  test:
+    name: Typecheck & test
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Run tests
+        run: npm test

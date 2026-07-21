@@ -27,6 +27,8 @@ registration natively.
   image/video families automatically).
 - **Validation & smoke test** — `scripts/validate.mjs` sanity-checks the config
   files; `scripts/smoke-test.mjs` runs 4 live API checks end-to-end.
+- **Developer tooling** — oxlint, oxfmt, and bumpp for linting, formatting,
+  and version management. CI runs lint + format + typecheck + test on every push.
 
 ## 📦 Installation
 
@@ -143,6 +145,10 @@ match the `id` returned by QwenCloud's `GET /v1/models` endpoint.
 > cost/context metadata. The context values above are reference figures ported
 > from [`pi-qwencloud-provider`](https://github.com/jellydn/pi-qwencloud-provider);
 > verify against the live `/models` endpoint.
+>
+> **Model IDs are case-sensitive.** Use the exact casing shown in the table
+> (e.g., `deepseek-v4-pro`, not `DeepSeek-V4-Pro`). The provider passes IDs
+> through to QwenCloud unchanged.
 
 ### Reasoning effort
 
@@ -352,17 +358,40 @@ API, but differ in shape:
 | Wan / HappyHorse        | ✅ via `/wan` & `/happyhorse` commands | ✅ via `wan`/`happyhorse` custom tools + slash commands |
 | Reasoning effort        | 6-level thinking map per model        | `options.reasoningEffort` per model      |
 
+## 🛠 Developer tooling
+
+| Command                    | Description                                   |
+| -------------------------- | --------------------------------------------- |
+| `npm run lint`             | Lint with oxlint (TypeScript, unicorn, import) |
+| `npm run format`           | Auto-format with oxfmt                        |
+| `npm run format:check`     | Check formatting without modifying files      |
+| `npm run typecheck`        | TypeScript type-checking (`tsc --noEmit`)      |
+| `npm test`                 | Run unit tests (vitest, mock fetch)            |
+| `npm run build`            | Compile plugin TypeScript to `dist/`           |
+| `npm run release`          | Bump version, commit, push, and tag (bumpp)    |
+| `npm run release:patch`    | Release a patch version bump                  |
+| `npm run release:minor`    | Release a minor version bump                  |
+| `npm run release:major`    | Release a major version bump                  |
+| `npm run pub`              | Publish to npm                                |
+
+CI ([validate workflow](https://github.com/jellydn/opencode-qwencloud-provider/actions/workflows/validate.yml))
+runs on every push and PR: config validation → lint + format check →
+typecheck + tests. The [release workflow](.github/workflows/release.yml)
+publishes to npm when a `v*` tag is pushed.
+
 ## 🤝 Contributing
 
 1. Don't commit real API keys. Keep `opencode.json` on `{env:QWENCLOUD_API_KEY}`
    and use the placeholder in `examples/`.
-2. When editing the model list, update **all four** places together so the
+2. Run `npm run format && npm run lint && npm run typecheck && npm test` before
+   committing.
+3. When editing the model list, update **all four** places together so the
    curated display names stay in sync: `opencode.json`,
    `examples/opencode.inline-key.json`, the model table in this README, **and**
    the `KNOWN_NAMES` map in `scripts/fetch-models.mjs` (so `--write` reproduces
    the hand-tuned names rather than regressing them to the heuristic fallback).
    `fetch-models.mjs --write` only updates `opencode.json`.
-3. Run `npm run validate` before committing.
+4. Run `npm run validate` before committing.
 
 ## 📄 License
 

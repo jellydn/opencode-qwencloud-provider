@@ -1,11 +1,15 @@
 # AGENTS.md — opencode-qwencloud-provider
 
-A **config-only** provider package for [opencode](https://opencode.ai) that
-exposes [QwenCloud](https://home.qwencloud.com)'s Token Plan subscription as an
-OpenAI-compatible provider. There is **no TypeScript build, no runtime code,
-and no `registerProvider` API** — unlike the sister project
+A provider package for [opencode](https://opencode.ai) that exposes
+[QwenCloud](https://home.qwencloud.com)'s Token Plan subscription through two
+subsystems:
+- A **config-only** chat provider (`opencode.json` + `@ai-sdk/openai-compatible`)
+- A **runtime plugin** (`plugin/`) with Wan/HappyHorse custom tools
+
+Unlike the sister project
 [`pi-qwencloud-provider`](https://github.com/jellydn/pi-qwencloud-provider),
-opencode custom providers are defined entirely in `opencode.json`.
+there is no `registerProvider` API — opencode's provider and plugin systems
+handle registration natively.
 
 ## Layout
 
@@ -18,6 +22,10 @@ scripts/fetch-models.mjs          # refresh models from the live /models endpoin
 scripts/validate.mjs              # validate the JSON config files
 scripts/smoke-test.mjs            # end-to-end live API checks (basic, streaming, tool call, 2nd model)
 tests/plugin/                     # unit tests for the plugin (vitest, mock fetch)
+.oxlintrc.json                    # oxlint config (typescript, unicorn, import)
+.oxfmtrc.json                     # oxfmt config (default)
+.github/workflows/validate.yml    # CI: validate + lint + format + typecheck + test
+.github/workflows/release.yml     # CI: npm publish on v* tags
 package.json                      # npm metadata + scripts + build setup
 README.md                         # user-facing docs
 CHANGELOG.md                      # release history
@@ -30,7 +38,22 @@ LICENSE                           # MIT
 # Build the plugin (TypeScript → dist/)
 npm run build               # rm -rf dist && tsc
 npm run typecheck           # tsc --noEmit
-npm run test                # vitest run (unit tests, mock fetch)
+
+# Lint & format (oxlint + oxfmt)
+npm run lint                # oxlint --config .oxlintrc.json plugin/ tests/
+npm run format              # oxfmt --write plugin/ tests/
+npm run format:check        # oxfmt --check plugin/ tests/
+
+# Test (vitest, mock fetch)
+npm run test                # vitest run (unit tests)
+npm run test:watch          # vitest (watch mode)
+
+# Version management (bumpp)
+npm run release             # bumpp --commit --push --tag (auto-detect)
+npm run release:patch       # bumpp --commit --push --tag patch
+npm run release:minor       # bumpp --commit --push --tag minor
+npm run release:major       # bumpp --commit --push --tag major
+npm run pub                 # npm publish
 
 # Validate the config files (no deps required, Node >= 20)
 npm run validate            # node scripts/validate.mjs
@@ -50,6 +73,13 @@ consumes is `opencode.json` (plus helper scripts). The **plugin** has a
 TypeScript build (`tsc` → `dist/`) and unit tests (`vitest`). Plugin tests
 mock `fetch`; they do not hit the real API. The smoke-test and validate
 scripts remain plain ESM Node (.mjs) with zero dependencies.
+
+### CI
+
+- **Validate** (`.github/workflows/validate.yml`): runs on every push/PR —
+  3 parallel jobs: validate configs, lint+format, typecheck+test.
+- **Release** (`.github/workflows/release.yml`): triggered on `v*` tags —
+  full gate (lint→format→typecheck→test→build) then `npm publish --provenance`.
 
 ## Architecture & key facts
 
@@ -86,6 +116,16 @@ scripts remain plain ESM Node (.mjs) with zero dependencies.
 ## Conventions & gotchas
 
 - **ESM only** in `scripts/` (Node `.mjs`, explicit `node:` imports).
+- **Plugin TypeScript** uses extensionless ESM imports (`"moduleResolution":
+  "bundler"`). Build outputs to `dist/`.
+- **Linting**: oxlint with `.oxlintrc.json` (typescript, unicorn, oxc,
+  import plugins). Run `npm run lint` before committing.
+- **Formatting**: oxfmt with `.oxfmtrc.json` (default config). Run `npm run
+  format` to auto-fix, `npm run format:check` to verify in CI.
+- **Version management**: `bumpp` handles bumping, committing, pushing, and
+  tagging. Use `npm run release` (auto-detect) or `release:patch/minor/major`.
+- **CI**: validate workflow runs on every push/PR (3 parallel jobs). Release
+  workflow publishes to npm on `v*` tags.
 - **Never commit API keys.** `opencode.json` uses `{env:...}`; the example
   uses a placeholder. `.gitignore` blocks `.env*` and `.envrc`.
 - When editing the model list, update **all four** places together so the
@@ -109,9 +149,3 @@ scripts remain plain ESM Node (.mjs) with zero dependencies.
   `npm test`. Plugin source (`plugin/`) is compiled to `dist/` by `npm run
   build`. `@opencode-ai/plugin` is a `peerDependency` (opencode provides it
   at runtime) and a `devDependency` (for unit tests and typechecking).
-- `smoke-test.mjs` hits the **live** API with 4 checks (basic completion,
-  SSE streaming, tool call, second model). Exit codes: `0` all passed · `1`
-  missing key · `2` one or more checks failed. The `DEFAULT_BASE` constant
-  MUST stay in sync with the `baseURL` in `opencode.json` / `examples/` /
-  `fetch-models.mjs` `DEFAULT_BASE`. Prefer setting `QWENCLOUD_API_BASE` over
-  editing the constant. Never commit a real key to run it — pass via env var.

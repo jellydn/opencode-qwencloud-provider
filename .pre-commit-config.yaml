@@ -1,0 +1,23 @@
+repos:
+  - repo: local
+    hooks:
+      - id: validate
+        name: validate config
+        entry: npm run validate
+        language: system
+        pass_filenames: false
+        files: \.(json|mjs|js)$
+
+      - id: typecheck
+        name: typecheck typescript
+        entry: npm run typecheck
+        language: system
+        pass_filenames: false
+        files: \.(ts|tsx)$
+
+      - id: test
+        name: run unit tests
+        entry: npm run test
+        language: system
+        pass_filenames: false
+        files: \.(ts|tsx|js|mjs)$

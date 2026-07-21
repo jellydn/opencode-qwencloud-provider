@@ -87,9 +87,14 @@ function prettyName(id) {
     .join(" ");
 }
 
+// Check if model ID starts with a non-chat family prefix followed by a
+// word boundary (dash or end-of-string).  Avoids false positives like
+// "swan-7b" matching "wan" via substring.
 function isNonChat(id) {
   const lower = id.toLowerCase();
-  return NON_CHAT_FAMILIES.some((f) => lower.includes(f));
+  return NON_CHAT_FAMILIES.some(
+    (f) => lower === f || lower.startsWith(`${f}-`)
+  );
 }
 
 async function main() {

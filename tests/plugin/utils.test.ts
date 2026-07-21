@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { isRecord, stringValue } from "../../plugin/utils.js";
+import { isRecord, stringValue } from "../../plugin/utils";
 
 describe("isRecord", () => {
   it("returns true for plain objects", () => {

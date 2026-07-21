@@ -13,7 +13,7 @@ import { writeFile, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import {
   resolveApiBase,
-  resolveApiKey,
+  requireApiKey,
   rootApiBase,
   WAN_ENDPOINT,
   DEFAULT_WAN_MODEL,
@@ -58,10 +58,7 @@ export async function generateWanImage(
   prompt: string,
   options: WanOptions = {},
 ): Promise<{ url: string; model: string; size: string }> {
-  const apiKey = options.apiKey ?? resolveApiKey();
-  if (!apiKey) {
-    throw new Error("No QwenCloud API key found. Set QWENCLOUD_API_KEY.");
-  }
+  const apiKey = requireApiKey(options.apiKey);
 
   const model = options.model ?? DEFAULT_WAN_MODEL;
   if (!WAN_MODELS.has(model)) {

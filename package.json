@@ -54,12 +54,23 @@
     "build": "rm -rf dist && tsc",
     "typecheck": "tsc --noEmit --project tsconfig.json",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "lint": "oxlint --config .oxlintrc.json plugin/ tests/",
+    "format": "oxfmt --write plugin/ tests/",
+    "format:check": "oxfmt --check plugin/ tests/",
+    "release": "bumpp --commit --push --tag",
+    "release:patch": "bumpp --commit --push --tag patch",
+    "release:minor": "bumpp --commit --push --tag minor",
+    "release:major": "bumpp --commit --push --tag major",
+    "pub": "npm publish"
   },
   "dependencies": {},
   "devDependencies": {
     "@opencode-ai/plugin": "^1.18.0",
     "@types/node": "^20.0.0",
+    "bumpp": "^12.0.0",
+    "oxfmt": "^0.59.0",
+    "oxlint": "^1.71.0",
     "typescript": "^5.5.0",
     "vitest": "^4.0.0"
   },

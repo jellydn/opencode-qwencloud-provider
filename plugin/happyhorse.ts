@@ -13,7 +13,7 @@ import { writeFile, mkdir } from "node:fs/promises";
 import { join, basename } from "node:path";
 import {
   resolveApiBase,
-  resolveApiKey,
+  requireApiKey,
   rootApiBase,
   HAPPYHORSE_ENDPOINT,
   TASK_ENDPOINT,
@@ -186,9 +186,7 @@ async function downloadVideo(
   const urlPath = videoUrl.split("?")[0];
   const urlName = basename(urlPath);
   const filename =
-    urlName && urlName.includes(".")
-      ? `happyhorse-${urlName}`
-      : `happyhorse-${Date.now()}.mp4`;
+    urlName && urlName.includes(".") ? `happyhorse-${urlName}` : `happyhorse-${Date.now()}.mp4`;
   const localPath = join(outputDir, filename);
   await writeFile(localPath, buffer);
   return localPath;
@@ -209,10 +207,7 @@ export async function generateAndDownloadHappyHorseVideo(
   outputDir: string,
   options: HappyHorseOptions = {},
 ): Promise<HappyHorseResult> {
-  const apiKey = options.apiKey ?? resolveApiKey();
-  if (!apiKey) {
-    throw new Error("No QwenCloud API key found. Set QWENCLOUD_API_KEY.");
-  }
+  const apiKey = requireApiKey(options.apiKey);
 
   const model = options.model ?? DEFAULT_HAPPYHORSE_MODEL;
   if (!HAPPYHORSE_MODELS.has(model)) {

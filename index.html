@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>opencode-qwencloud-provider — QwenCloud models for opencode</title>
-  <meta name="description" content="Access Qwen3.8, Qwen3.7, Qwen3.6, DeepSeek V4, and GLM-5.2 through QwenCloud's OpenAI-compatible API as an opencode provider. Zero dependencies, config-only.">
+  <meta name="description" content="Access Qwen3.8, Qwen3.7, Qwen3.6, DeepSeek V4, and GLM-5.2 through QwenCloud's OpenAI-compatible API. Includes Wan image generation and HappyHorse video generation as opencode custom tools.">
   <meta name="color-scheme" content="dark">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -18,9 +18,7 @@
     }
   </script>
   <style>
-    @layer base {
-      body { -webkit-font-smoothing: antialiased; }
-    }
+    body { -webkit-font-smoothing: antialiased; }
 
     .gradient-text {
       background: linear-gradient(135deg, #a78bfa 0%, #67e8f9 50%, #a78bfa 100%);
@@ -39,31 +37,21 @@
     .config-block {
       background: linear-gradient(135deg, rgb(30 27 46 / 0.8), rgb(23 21 31 / 0.9));
       border: 1px solid rgb(99 102 241 / 0.15);
-      box-shadow:
-        0 0 0 1px rgb(99 102 241 / 0.05) inset,
-        0 4px 24px rgb(0 0 0 / 0.3);
+      box-shadow: 0 0 0 1px rgb(99 102 241 / 0.05) inset, 0 4px 24px rgb(0 0 0 / 0.3);
     }
 
     .card-hover {
       transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     }
-
     .card-hover:hover {
       transform: translateY(-2px);
       box-shadow: 0 8px 30px rgb(0 0 0 / 0.4);
     }
 
-    .accent-border {
-      border-color: rgb(99 102 241 / 0.2);
-    }
+    .accent-border { border-color: rgb(99 102 241 / 0.2); }
 
-    .table-row {
-      transition: background-color 0.2s ease;
-    }
-
-    .table-row:hover {
-      background: rgb(99 102 241 / 0.06);
-    }
+    .table-row { transition: background-color 0.2s ease; }
+    .table-row:hover { background: rgb(99 102 241 / 0.06); }
 
     .pill {
       border-radius: 9999px;
@@ -73,16 +61,15 @@
       line-height: 1.25rem;
     }
 
+    .badge-green { background: rgb(52 211 153 / 0.1); color: rgb(52 211 153); }
+    .badge-amber { background: rgb(251 191 36 / 0.1); color: rgb(251 191 36); }
+
     @media (prefers-reduced-motion: reduce) {
       .gradient-text { animation: none; }
-      .card-hover { transition: none; }
-      .card-hover:hover { transform: none; }
+      .card-hover, .card-hover:hover { transition: none; transform: none; }
     }
 
-    ::selection {
-      background: rgb(99 102 241 / 0.3);
-      color: #e0e7ff;
-    }
+    ::selection { background: rgb(99 102 241 / 0.3); color: #e0e7ff; }
   </style>
 </head>
 <body class="bg-[#0d0b14] text-[#c8c5d0] font-sans">
@@ -109,9 +96,9 @@
         <span class="block gradient-text">for opencode</span>
       </h1>
       <p class="text-lg leading-relaxed text-[#8b87a0] max-w-xl mb-10">
-        Access Qwen3.8, Qwen3.7, Qwen3.6, DeepSeek V4, and GLM&#8209;5.2 through
-        QwenCloud's OpenAI-compatible API. Zero dependencies, config-only — drop
-        in a JSON file and start coding.
+        Six chat models via OpenAI-compatible API. Wan image generation and
+        HappyHorse video generation as native opencode custom tools.
+        JSON config for the provider, TypeScript plugin for media.
       </p>
       <div class="flex gap-4 flex-wrap">
         <a href="#install"
@@ -144,13 +131,13 @@
   }
 }</pre>
     </div>
-    <p class="text-xs text-[#6b6680] mt-4 text-center font-mono">No build step. No runtime code. Just JSON.</p>
+    <p class="text-xs text-[#6b6680] mt-4 text-center font-mono">Chat provider is config-only — no build step for the models.</p>
   </section>
 
   <!-- Models table -->
   <section class="px-6 pb-20 max-w-5xl mx-auto">
-    <h2 class="text-sm font-mono tracking-widest uppercase text-[#67e8f9]/70 mb-3">Models</h2>
-    <p class="text-2xl font-bold text-white mb-8 tracking-[-0.02em]">Six chat models, one config</p>
+    <h2 class="text-sm font-mono tracking-widest uppercase text-[#67e8f9]/70 mb-3">Chat Models</h2>
+    <p class="text-2xl font-bold text-white mb-8 tracking-[-0.02em]">Six models, one config file</p>
 
     <div class="overflow-x-auto rounded-xl border border-white/[0.06]">
       <table class="w-full text-sm">
@@ -167,37 +154,37 @@
             <td class="px-6 py-4 font-medium text-white">Qwen3.8 Max Preview</td>
             <td class="px-6 py-4 font-mono text-xs text-[#a78bfa]">qwen3.8-max-preview</td>
             <td class="px-6 py-4 hidden sm:table-cell text-[#8b87a0]">262K</td>
-            <td class="px-6 py-4 hidden sm:table-cell"><span class="pill bg-indigo-500/10 text-indigo-400">Yes</span></td>
+            <td class="px-6 py-4 hidden sm:table-cell"><span class="pill badge-green">Yes</span></td>
           </tr>
           <tr class="table-row border-b border-white/[0.04]">
             <td class="px-6 py-4 font-medium text-white">Qwen3.7 Max</td>
             <td class="px-6 py-4 font-mono text-xs text-[#a78bfa]">qwen3.7-max</td>
             <td class="px-6 py-4 hidden sm:table-cell text-[#8b87a0]">262K</td>
-            <td class="px-6 py-4 hidden sm:table-cell"><span class="pill bg-indigo-500/10 text-indigo-400">Yes</span></td>
+            <td class="px-6 py-4 hidden sm:table-cell"><span class="pill badge-green">Yes</span></td>
           </tr>
           <tr class="table-row border-b border-white/[0.04]">
             <td class="px-6 py-4 font-medium text-white">Qwen3.7 Plus</td>
             <td class="px-6 py-4 font-mono text-xs text-[#a78bfa]">qwen3.7-plus</td>
             <td class="px-6 py-4 hidden sm:table-cell text-[#8b87a0]">1M</td>
-            <td class="px-6 py-4 hidden sm:table-cell"><span class="pill bg-indigo-500/10 text-indigo-400">Yes</span></td>
+            <td class="px-6 py-4 hidden sm:table-cell"><span class="pill badge-green">Yes</span></td>
           </tr>
           <tr class="table-row border-b border-white/[0.04]">
             <td class="px-6 py-4 font-medium text-white">Qwen3.6 Flash</td>
             <td class="px-6 py-4 font-mono text-xs text-[#a78bfa]">qwen3.6-flash</td>
             <td class="px-6 py-4 hidden sm:table-cell text-[#8b87a0]">131K</td>
-            <td class="px-6 py-4 hidden sm:table-cell"><span class="pill bg-indigo-500/10 text-indigo-400">Yes</span></td>
+            <td class="px-6 py-4 hidden sm:table-cell"><span class="pill badge-green">Yes</span></td>
           </tr>
           <tr class="table-row border-b border-white/[0.04]">
             <td class="px-6 py-4 font-medium text-white">DeepSeek V4 Pro</td>
             <td class="px-6 py-4 font-mono text-xs text-[#a78bfa]">deepseek-v4-pro</td>
             <td class="px-6 py-4 hidden sm:table-cell text-[#8b87a0]">1M</td>
-            <td class="px-6 py-4 hidden sm:table-cell"><span class="pill bg-indigo-500/10 text-indigo-400">Yes</span></td>
+            <td class="px-6 py-4 hidden sm:table-cell"><span class="pill badge-green">Yes</span></td>
           </tr>
           <tr class="table-row">
             <td class="px-6 py-4 font-medium text-white">GLM-5.2</td>
             <td class="px-6 py-4 font-mono text-xs text-[#a78bfa]">glm-5.2</td>
             <td class="px-6 py-4 hidden sm:table-cell text-[#8b87a0]">200K</td>
-            <td class="px-6 py-4 hidden sm:table-cell"><span class="pill bg-indigo-500/10 text-indigo-400">Yes</span></td>
+            <td class="px-6 py-4 hidden sm:table-cell"><span class="pill badge-green">Yes</span></td>
           </tr>
         </tbody>
       </table>
@@ -223,29 +210,76 @@
           <span class="font-mono text-xs text-indigo-400">2</span>
         </div>
         <h3 class="font-semibold text-white mb-2">Set your API key</h3>
-        <p class="text-sm text-[#8b87a0] mb-4">Export your Token Plan key — it never touches the config file.</p>
+        <p class="text-sm text-[#8b87a0] mb-4">Export your Token Plan key. The config interpolates it from the environment — never touches the file.</p>
         <pre class="text-xs font-mono text-[#a5a0b8] bg-[#0d0b14]/60 rounded-lg p-3 border border-white/[0.05]">QWENCLOUD_API_KEY=sk-... opencode</pre>
       </div>
     </div>
   </section>
 
-  <!-- Why section -->
+  <!-- Wan & HappyHorse -->
   <section class="px-6 pb-20 max-w-5xl mx-auto">
-    <h2 class="text-sm font-mono tracking-widest uppercase text-[#67e8f9]/70 mb-3">Why</h2>
-    <p class="text-2xl font-bold text-white mb-8 tracking-[-0.02em]">Zero dependencies, pure config</p>
+    <h2 class="text-sm font-mono tracking-widest uppercase text-[#67e8f9]/70 mb-3">Media generation</h2>
+    <p class="text-2xl font-bold text-white mb-4 tracking-[-0.02em]">Wan images + HappyHorse video</p>
+    <p class="text-[#8b87a0] mb-8 max-w-2xl">Custom opencode tools. The AI calls them natively when you ask for image or video generation — or use the slash commands directly.</p>
+
+    <div class="grid sm:grid-cols-2 gap-4 mb-8">
+      <div class="card-hover accent-border border rounded-xl p-6 bg-[#0d0b14]">
+        <p class="text-xs font-mono text-indigo-400 mb-3">Wan image generation</p>
+        <p class="text-sm text-[#8b87a0] mb-4">Text-to-image with <code class="font-mono text-xs bg-white/[0.06] px-1.5 py-0.5 rounded">wan2.7-image</code> and <code class="font-mono text-xs bg-white/[0.06] px-1.5 py-0.5 rounded">wan2.7-image-pro</code>. Outputs at 1K, 2K, and 4K. Synchronous — images save to your working directory immediately.</p>
+        <pre class="text-xs font-mono text-[#a5a0b8] bg-[#0d0b14]/60 rounded-lg p-3 border border-white/[0.05]"><span class="text-[#67e8f9]">/wan</span> a cyberpunk cat in neon rain</pre>
+      </div>
+      <div class="card-hover accent-border border rounded-xl p-6 bg-[#0d0b14]">
+        <p class="text-xs font-mono text-indigo-400 mb-3">HappyHorse video generation</p>
+        <p class="text-sm text-[#8b87a0] mb-4">Text-to-video, image-to-video, and reference-to-video. Async with progress polling. 3–15 second output.</p>
+        <pre class="text-xs font-mono text-[#a5a0b8] bg-[#0d0b14]/60 rounded-lg p-3 border border-white/[0.05]"><span class="text-[#67e8f9]">/happyhorse</span> a drone shot over the ocean</pre>
+      </div>
+    </div>
+
+    <div class="card-hover accent-border border rounded-xl p-6 bg-[#0d0b14]">
+      <p class="text-xs font-mono text-indigo-400 mb-3">Plugin setup</p>
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div>
+          <p class="text-xs text-[#6b6680] mb-2">Local (copy files)</p>
+          <pre class="text-xs font-mono text-[#a5a0b8] bg-[#0d0b14]/60 rounded-lg p-3 border border-white/[0.05]">cp -R plugin/ ~/.config/opencode/plugin/
+cp -R command/ ~/.config/opencode/command/</pre>
+        </div>
+        <div>
+          <p class="text-xs text-[#6b6680] mb-2">npm (add to opencode.json)</p>
+          <pre class="text-xs font-mono text-[#a5a0b8] bg-[#0d0b14]/60 rounded-lg p-3 border border-white/[0.05]"><span class="text-[#6ee7b7]">"plugin"</span>: [<span class="text-[#c084fc]">"opencode-qwencloud-provider"</span>]</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="px-6 pb-20 max-w-5xl mx-auto">
+    <h2 class="text-sm font-mono tracking-widest uppercase text-[#67e8f9]/70 mb-3">Features</h2>
+    <p class="text-2xl font-bold text-white mb-8 tracking-[-0.02em]">Provider + plugin in one package</p>
 
     <div class="grid sm:grid-cols-3 gap-4">
       <div class="card-hover accent-border border rounded-xl p-6 bg-[#0d0b14]">
-        <p class="text-xs font-mono text-indigo-400 mb-3">No build step</p>
-        <p class="text-sm text-[#8b87a0]">opencode reads the JSON directly. No npm install, no compile, no runtime code.</p>
+        <p class="text-xs font-mono text-indigo-400 mb-3">Config-only chat</p>
+        <p class="text-sm text-[#8b87a0]">The chat provider is pure JSON. opencode reads it directly — streaming, tool calls, and usage tracking work through the OpenAI-compatible transport.</p>
       </div>
       <div class="card-hover accent-border border rounded-xl p-6 bg-[#0d0b14]">
         <p class="text-xs font-mono text-indigo-400 mb-3">Env-var auth</p>
-        <p class="text-sm text-[#8b87a0]">API key interpolated from environment. Safe to commit, safe to share.</p>
+        <p class="text-sm text-[#8b87a0]">API key interpolated from <code class="font-mono text-xs bg-white/[0.06] px-1 py-0.5 rounded">QWENCLOUD_API_KEY</code>. Safe to commit, safe to share. Inline fallback available.</p>
       </div>
       <div class="card-hover accent-border border rounded-xl p-6 bg-[#0d0b14]">
-        <p class="text-xs font-mono text-indigo-400 mb-3">OpenAI-compatible</p>
-        <p class="text-sm text-[#8b87a0]">Streaming, tool calls, and usage tracking work out of the box via the standard adapter.</p>
+        <p class="text-xs font-mono text-indigo-400 mb-3">Custom tools</p>
+        <p class="text-sm text-[#8b87a0]">Wan and HappyHorse registered as native opencode tools via <code class="font-mono text-xs bg-white/[0.06] px-1 py-0.5 rounded">@opencode-ai/plugin</code>. AI calls them autonomously — no special commands needed.</p>
+      </div>
+      <div class="card-hover accent-border border rounded-xl p-6 bg-[#0d0b14]">
+        <p class="text-xs font-mono text-indigo-400 mb-3">Refreshable models</p>
+        <p class="text-sm text-[#8b87a0]">Run <code class="font-mono text-xs bg-white/[0.06] px-1 py-0.5 rounded">fetch-models.mjs</code> to pull the live model catalog. Auto-filters non-chat families.</p>
+      </div>
+      <div class="card-hover accent-border border rounded-xl p-6 bg-[#0d0b14]">
+        <p class="text-xs font-mono text-indigo-400 mb-3">Smoke tested</p>
+        <p class="text-sm text-[#8b87a0]">Four live API checks — basic completion, SSE streaming, tool call, second model — via <code class="font-mono text-xs bg-white/[0.06] px-1 py-0.5 rounded">smoke-test.mjs</code>. Run locally before your first session.</p>
+      </div>
+      <div class="card-hover accent-border border rounded-xl p-6 bg-[#0d0b14]">
+        <p class="text-xs font-mono text-indigo-400 mb-3">Validated config</p>
+        <p class="text-sm text-[#8b87a0]"><code class="font-mono text-xs bg-white/[0.06] px-1 py-0.5 rounded">validate.mjs</code> checks JSON syntax and required provider fields. CI runs it on every push.</p>
       </div>
     </div>
   </section>
@@ -267,11 +301,11 @@
         <tbody class="text-[#c8c5d0]">
           <tr class="table-row border-b border-white/[0.04]">
             <td class="px-6 py-3 text-[#8b87a0]">Form factor</td>
-            <td class="px-6 py-3">JSON config</td>
+            <td class="px-6 py-3">JSON config + TS plugin</td>
             <td class="px-6 py-3 text-[#8b87a0]">TypeScript package</td>
           </tr>
           <tr class="table-row border-b border-white/[0.04]">
-            <td class="px-6 py-3 text-[#8b87a0]">Build step</td>
+            <td class="px-6 py-3 text-[#8b87a0]">Chat provider build</td>
             <td class="px-6 py-3">None</td>
             <td class="px-6 py-3 text-[#8b87a0]">tsup</td>
           </tr>
@@ -287,8 +321,8 @@
           </tr>
           <tr class="table-row">
             <td class="px-6 py-3 text-[#8b87a0]">Wan / HappyHorse</td>
-            <td class="px-6 py-3">—</td>
-            <td class="px-6 py-3 text-[#6b6680]">Yes</td>
+            <td class="px-6 py-3"><span class="pill badge-green">custom tools</span></td>
+            <td class="px-6 py-3 text-[#8b87a0]"><span class="pill badge-green">/wan & /happyhorse</span></td>
           </tr>
         </tbody>
       </table>
@@ -299,7 +333,7 @@
   <section class="px-6 pb-32 max-w-5xl mx-auto text-center">
     <div class="config-block rounded-2xl p-10 md:p-16">
       <p class="text-2xl font-bold text-white mb-4 tracking-[-0.02em]">Ready to use QwenCloud with opencode?</p>
-      <p class="text-[#8b87a0] mb-8 max-w-md mx-auto">One JSON file, one env var. That's it.</p>
+      <p class="text-[#8b87a0] mb-8 max-w-md mx-auto">One JSON file, one env var, plus Wan and HappyHorse as native tools.</p>
       <a href="https://github.com/jellydn/opencode-qwencloud-provider"
          class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-indigo-500 hover:bg-indigo-400 text-white font-medium text-sm transition-colors">
         View on GitHub

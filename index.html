@@ -75,14 +75,15 @@
       </p>
       <h1 class="text-[2.5rem] leading-[1.1] font-bold tracking-[-0.03em] text-[#f0ede8] mb-6 max-w-2xl">
         Chat models for
-        <span class="text-[#d4a72c]">opencode</span>,
-        config-only
+        <span class="text-[#d4a72c]">opencode</span>
+        with a config-only provider
       </h1>
       <p class="text-lg leading-relaxed text-[#8c8984] max-w-xl mb-12">
         A single JSON file exposes six chat models through QwenCloud's
-        OpenAI-compatible API. Streaming, tool calls, and usage tracking
-        work out of the box. Wan image generation and HappyHorse video
-        come as native opencode tools, no separate setup.
+        OpenAI-compatible API — no build needed for chat. Streaming, tool
+        calls, and usage tracking work out of the box. Wan image generation
+        and HappyHorse video come as a plugin you can install via npm or
+        drop a single bundled file into your opencode config.
       </p>
     </div>
   </section>
@@ -188,13 +189,13 @@ cp opencode.json ./path/to/project/</pre>
 
         <div>
           <p class="text-lg font-semibold text-[#f0ede8] mb-1">Set your API key</p>
-          <p class="text-sm text-[#8c8984] mb-4">The config uses <code class="font-mono text-xs bg-white/[0.05] px-1.5 py-0.5 rounded">{env:QWENCLOUD_API_KEY}</code> so your key never lands in a committed file.</p>
+          <p class="text-sm text-[#8c8984] mb-4">The chat config uses <code class="font-mono text-xs bg-white/[0.05] px-1.5 py-0.5 rounded">{env:QWENCLOUD_API_KEY}</code> so your key never lands in a committed file. The plugin also reads from <code class="font-mono text-xs bg-white/[0.05] px-1.5 py-0.5 rounded">/connect</code> inline config — set the key once and both tiers pick it up.</p>
           <div class="config-block rounded-lg p-4 overflow-x-auto">
             <pre class="text-sm font-mono"><span class="cmt"># Persistent</span>
 <span class="key">echo</span> <span class="str">'export QWENCLOUD_API_KEY="your_key_here"'</span> >> ~/.zshrc
 <span class="key">source</span> ~/.zshrc
 
-<span class="cmt"># Single session</span>
+<span class="cmt"># Single session (or use /connect in opencode for plugin-only)</span>
 QWENCLOUD_API_KEY=sk-... opencode</pre>
           </div>
         </div>
@@ -234,7 +235,8 @@ QWENCLOUD_API_KEY=sk-... opencode</pre>
           <div class="space-y-3">
             <div>
               <p class="text-xs text-[#5c5850] mb-1.5 font-mono">Local install</p>
-              <pre class="text-sm font-mono"><span class="cmt"># Copy the single bundled file</span>
+              <pre class="text-sm font-mono"><span class="cmt"># Build the single-file bundle, then copy into opencode</span>
+npm install && npm run build
 cp dist/opencode-qwencloud-provider.js ~/.config/opencode/plugins/
 <span class="cmt"># Plus slash-command files</span>
 cp command/wan.md command/happyhorse.md ~/.config/opencode/command/</pre>
@@ -257,7 +259,7 @@ cp command/wan.md command/happyhorse.md ~/.config/opencode/command/</pre>
       <dl class="space-y-6">
         <div>
           <dt class="text-sm font-semibold text-[#f0ede8]">Config-only chat provider</dt>
-          <dd class="text-sm text-[#8c8984] mt-1">No build, no registration code. opencode reads the JSON directly. Streaming, tool calls, and usage tracking work through the OpenAI-compatible transport without any TypeScript glue.</dd>
+          <dd class="text-sm text-[#8c8984] mt-1">The chat provider requires zero build — opencode reads the JSON directly. Streaming, tool calls, and usage tracking work through the OpenAI-compatible transport. The plugin compiles separately with <code class="font-mono text-xs bg-white/[0.05] px-1.5 py-0.5 rounded">tsup</code> (or install from npm with no build).</dd>
         </div>
         <div>
           <dt class="text-sm font-semibold text-[#f0ede8]">Env-var auth</dt>
@@ -310,7 +312,7 @@ cp command/wan.md command/happyhorse.md ~/.config/opencode/command/</pre>
             </tr>
             <tr class="table-row border-b border-white/[0.03]">
               <td class="px-6 py-3 text-[#8c8984]">Auth</td>
-              <td class="px-6 py-3 text-[#f0ede8]">{env:VAR} or inline key</td>
+              <td class="px-6 py-3 text-[#f0ede8]">{env:VAR}, inline key, or /connect</td>
               <td class="px-6 py-3 text-[#8c8984]">env, /login, auth.json</td>
             </tr>
             <tr class="table-row border-b border-white/[0.03]">
@@ -345,7 +347,7 @@ cp command/wan.md command/happyhorse.md ~/.config/opencode/command/</pre>
           <tbody>
             <tr class="table-row border-b border-white/[0.03]">
               <td class="px-6 py-3 font-mono text-xs text-[#a3b18a]">npm run lint</td>
-              <td class="px-6 py-3 text-[#8c8984]">oxlint with TypeScript, unicorn, import plugins</td>
+              <td class="px-6 py-3 text-[#8c8984]">oxlint with TypeScript, unicorn, oxc, import plugins</td>
             </tr>
             <tr class="table-row border-b border-white/[0.03]">
               <td class="px-6 py-3 font-mono text-xs text-[#a3b18a]">npm run format</td>
@@ -382,10 +384,11 @@ cp command/wan.md command/happyhorse.md ~/.config/opencode/command/</pre>
     <div class="max-w-3xl mx-auto">
       <div class="config-block rounded-xl p-10 md:p-14">
         <p class="text-xl font-bold text-[#f0ede8] mb-3 tracking-[-0.02em]">
-          One JSON file, one env var
+          One JSON file, one env var (or /connect)
         </p>
         <p class="text-sm text-[#8c8984] mb-8 max-w-md">
-          Plus Wan and HappyHorse as native opencode tools. Drop the config, set your key, start using QwenCloud models.
+          Plus Wan and HappyHorse as native opencode tools. Drop the config,
+          set your key, build the plugin, start using QwenCloud models.
         </p>
         <a href="https://github.com/jellydn/opencode-qwencloud-provider"
            class="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-[#d4a72c] hover:bg-[#c49a1a] text-[#0d0b0a] font-semibold text-sm transition-colors">

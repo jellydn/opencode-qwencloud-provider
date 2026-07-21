@@ -375,7 +375,7 @@ API, but differ in shape:
 | Form factor             | TypeScript extension package          | JSON config + TypeScript plugin + scripts |
 | Provider registration   | `pi.registerProvider("qw", …)`        | `provider.qwencloud` in `opencode.json`  |
 | Model discovery         | Dynamic `/models` fetch at startup    | Static list, refreshable via script      |
-| Auth                    | env var, `/login`, or `auth.json`     | `{env:QWENCLOUD_API_KEY}` or inline key  |
+| Auth                    | env var, `/login`, or `auth.json`     | `{env:QWENCLOUD_API_KEY}`, inline key, or `/connect` |
 | Wan / HappyHorse        | ✅ via `/wan` & `/happyhorse` commands | ✅ via `wan`/`happyhorse` custom tools + slash commands |
 | Reasoning effort        | 6-level thinking map per model        | `options.reasoningEffort` per model      |
 

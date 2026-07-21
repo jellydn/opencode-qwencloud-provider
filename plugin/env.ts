@@ -102,11 +102,7 @@ function readConfigApiKey(): string | undefined {
  * Throws if no key is found in any source.
  */
 export function requireApiKey(override?: string): string {
-  const key =
-    override?.trim() ||
-    resolveApiKey() ||
-    readConfigApiKey() ||
-    "";
+  const key = override?.trim() || resolveApiKey() || readConfigApiKey() || "";
 
   if (!key) {
     throw new Error(

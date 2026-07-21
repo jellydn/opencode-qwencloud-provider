@@ -1,7 +1,15 @@
 {
   "name": "opencode-qwencloud-provider",
   "version": "0.1.0",
-  "description": "QwenCloud provider config for opencode — Qwen3.8, Qwen3.7, Qwen3.6, DeepSeek V4, and GLM-5.2 via QwenCloud's OpenAI-compatible API.",
+  "description": "QwenCloud provider for opencode — chat models (Qwen3.8, Qwen3.7, Qwen3.6, DeepSeek V4, GLM-5.2) via OpenAI-compatible API, plus Wan image generation and HappyHorse video generation as a plugin.",
+  "exports": {
+    ".": {
+      "types": "./dist/plugin/index.d.ts",
+      "import": "./dist/plugin/index.js"
+    }
+  },
+  "main": "./dist/plugin/index.js",
+  "types": "./dist/plugin/index.d.ts",
   "keywords": [
     "ai",
     "deepseek",
@@ -12,7 +20,11 @@
     "opencode-provider",
     "provider",
     "qwen",
-    "qwencloud"
+    "qwencloud",
+    "wan",
+    "happyhorse",
+    "image-generation",
+    "video-generation"
   ],
   "homepage": "https://github.com/jellydn/opencode-qwencloud-provider#readme",
   "bugs": {
@@ -26,6 +38,9 @@
   },
   "type": "module",
   "files": [
+    "dist",
+    "plugin",
+    "command",
     "opencode.json",
     "examples",
     "scripts",
@@ -34,7 +49,25 @@
   ],
   "scripts": {
     "fetch-models": "node scripts/fetch-models.mjs",
-    "validate": "node scripts/validate.mjs"
+    "validate": "node scripts/validate.mjs",
+    "smoke-test": "node scripts/smoke-test.mjs",
+    "build": "rm -rf dist && tsc",
+    "typecheck": "tsc --noEmit --project tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@opencode-ai/plugin": "^1.18.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^4.0.0"
+  },
+  "peerDependencies": {
+    "@opencode-ai/plugin": "^1.18.0"
+  },
+  "peerDependenciesMeta": {
+    "@opencode-ai/plugin": { "optional": false }
   },
   "engines": {
     "node": ">=20"

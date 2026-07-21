@@ -1,29 +1,32 @@
 # opencode-qwencloud-provider 🚀
 
+[![validate](https://github.com/jellydn/opencode-qwencloud-provider/actions/workflows/validate.yml/badge.svg)](https://github.com/jellydn/opencode-qwencloud-provider/actions/workflows/validate.yml) [![MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 [QwenCloud](https://home.qwencloud.com) provider for [opencode](https://opencode.ai) —
 access **Qwen3.8, Qwen3.7, Qwen3.6, DeepSeek V4, and GLM-5.2** through QwenCloud's
 OpenAI-compatible Chat Completions API on the Token Plan.
 
 Unlike the sister project
 [`pi-qwencloud-provider`](https://github.com/jellydn/pi-qwencloud-provider) (a
-TypeScript extension for the `pi` coding agent), this package is **config-only**:
-opencode custom providers are declared in `opencode.json`, so there is no build
-step, no runtime code, and no `registerProvider` API. You just point opencode at
-QwenCloud's endpoint and list the models you want.
+TypeScript extension for the `pi` coding agent), this package provides:
+- A **config-only** chat provider (`opencode.json` + `@ai-sdk/openai-compatible`)
+- A **runtime plugin** (`plugin/`) with Wan/HappyHorse custom tools and slash commands
+No `registerProvider` API — opencode's provider and plugin systems handle
+registration natively.
 
 ## ✨ Features
 
-- **Zero dependencies** — just an `opencode.json` you drop into your opencode
-  config dir or project root.
-- **OpenAI-compatible** — uses opencode's `@ai-sdk/openai-compatible` provider,
+- **OpenAI-compatible chat provider** — six chat models via `@ai-sdk/openai-compatible`,
   so streaming, tool calls, and usage tracking work out of the box.
+- **Wan & HappyHorse plugin** — custom tools for image and video generation.
+  The AI calls them autonomously, or use `/wan <prompt>` slash commands.
 - **Env-var auth** — `apiKey` is interpolated from `QWENCLOUD_API_KEY` via
   opencode's `{env:VAR}` syntax, so your key never lands in a committed file.
 - **Refresh helper** — `scripts/fetch-models.mjs` queries the live
   `/models` endpoint and regenerates the model list (filters out non-chat
   image/video families automatically).
-- **Validation helper** — `scripts/validate.mjs` sanity-checks the config
-  files are well-formed JSON with the required provider fields.
+- **Validation & smoke test** — `scripts/validate.mjs` sanity-checks the config
+  files; `scripts/smoke-test.mjs` runs 4 live API checks end-to-end.
 
 ## 📦 Installation
 
@@ -169,14 +172,66 @@ the [Models.dev `reasoning_options` schema](https://models.dev) for the
 correct field for your opencode version. This is currently unverified for
 `@ai-sdk/openai-compatible` + QwenCloud.
 
-### Why no Wan / HappyHorse?
+## 🎨 Wan & HappyHorse (image / video generation)
 
-The sister `pi` provider exposes Wan (image) and HappyHorse (video) generation
-via custom slash commands because they use **separate async task endpoints**,
-not `/chat/completions`. opencode's `@ai-sdk/openai-compatible` provider only
-targets chat completions, so those models are intentionally **not** included
-here. `fetch-models.mjs` filters the `wan`, `happyhorse`, and `qwen-image`
-families for the same reason.
+This package includes an **opencode plugin** that registers `wan` and
+`happyhorse` custom tools, plus slash-command support via
+`command/wan.md` and `command/happyhorse.md`. The AI can call these tools
+autonomously when you ask for image or video generation — just say
+"generate a cyberpunk cat image" and the AI handles it. You can also type
+`/wan a cyberpunk cat` or `/happyhorse a drone shot over the ocean`.
+
+### Setup (local plugin)
+
+Copy the plugin and command files into your opencode config:
+
+```bash
+cp -R plugin/ ~/.config/opencode/plugin/
+cp -R command/ ~/.config/opencode/command/
+```
+
+### Setup (npm plugin)
+
+Add to your opencode.json:
+
+```json
+{
+  "plugin": ["opencode-qwencloud-provider"]
+}
+```
+
+Then restart opencode. The `wan` and `happyhorse` tools will be available
+in any session.
+
+### Wan image generation
+
+| Model             | Description          | Sizes         |
+| ----------------- | -------------------- | ------------- |
+| `wan2.7-image`    | Text-to-image (default) | 1K, 2K, 4K  |
+| `wan2.7-image-pro` | Higher quality text-to-image | 1K, 2K, 4K |
+
+Synchronous API — images are generated and saved to the current working
+directory immediately. Generated image URLs expire after 24 hours, so the
+plugin downloads and saves them to disk automatically.
+
+### HappyHorse video generation
+
+| Model                | Description            | Duration  |
+| -------------------- | ---------------------- | --------- |
+| `happyhorse-1.1-t2v` | Text-to-video (default) | 3–15s    |
+| `happyhorse-1.1-i2v` | Image-to-video          | 3–15s    |
+| `happyhorse-1.1-r2v` | Reference-to-video      | 3–15s    |
+
+Async task-based API — submission, polling (up to ~10 min), then download.
+The tool reports progress to opencode. Videos are saved to the current
+working directory.
+
+### Why separate from chat?
+
+Wan and HappyHorse use dedicated endpoints (not `/chat/completions`), so
+they cannot be modeled as chat models in `@ai-sdk/openai-compatible`.
+The opencode plugin wraps these APIs as custom tools the AI calls
+natively — the same pattern opencode uses for its built-in tools.
 
 ## 🚀 Usage
 
@@ -207,6 +262,40 @@ opencode --model qwencloud/qwen3.7-plus
 | `QWENCLOUD_API_BASE`  | Override the API base URL         | `https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1` |
 
 ## 📜 Scripts
+
+### `npm run smoke-test`
+
+Runs [`scripts/smoke-test.mjs`](scripts/smoke-test.mjs) — four **live** API
+checks against the QwenCloud chat completions endpoint, mirroring the request
+shape that opencode's `@ai-sdk/openai-compatible` transport sends. Use this to
+confirm the provider works end-to-end before opening a PR or after any
+config/model-list change. Requires `QWENCLOUD_API_KEY` and hits the real API
+(incurs a small token cost).
+
+The four checks:
+
+1. **Basic completion** — auth + a 200 with content + `usage` token counts.
+2. **SSE streaming** — `stream: true` returns OpenAI `data:` SSE chunks (what
+   opencode parses for token-by-token UI).
+3. **Tool call** — the model emits a `tool_calls` array with parsed args and
+   `finish_reason: "tool_calls"` (the core agentic loop opencode runs).
+4. **Second model** — a second catalog model responds (guards against a
+   single-model fluke / wrong model ID).
+
+```bash
+# Run all 4 checks with the default models (qwen3.6-flash + glm-5.2)
+QWENCLOUD_API_KEY=sk-... npm run smoke-test
+
+# Override the primary model for checks 1-3, and show response details
+QWENCLOUD_API_KEY=sk-... node scripts/smoke-test.mjs --model qwen3.7-plus --verbose
+
+# Use a custom API base
+QWENCLOUD_API_KEY=sk-... node scripts/smoke-test.mjs --base https://custom-endpoint/v1
+```
+
+Exit codes: `0` all passed · `1` missing key · `2` one or more checks failed.
+Progress goes to stderr. Never commit a real key to run it — pass it via the
+env var.
 
 ### `npm run validate`
 
@@ -256,11 +345,11 @@ API, but differ in shape:
 |                         | `pi-qwencloud-provider`              | `opencode-qwencloud-provider`            |
 | ----------------------- | ------------------------------------- | ---------------------------------------- |
 | Target agent            | `pi` (`@earendil-works/pi-coding-agent`) | opencode (`sst/opencode`)               |
-| Form factor             | TypeScript extension package          | JSON config + helper scripts             |
+| Form factor             | TypeScript extension package          | JSON config + TypeScript plugin + scripts |
 | Provider registration   | `pi.registerProvider("qw", …)`        | `provider.qwencloud` in `opencode.json`  |
 | Model discovery         | Dynamic `/models` fetch at startup    | Static list, refreshable via script      |
 | Auth                    | env var, `/login`, or `auth.json`     | `{env:QWENCLOUD_API_KEY}` or inline key  |
-| Wan / HappyHorse        | ✅ via `/wan` & `/happyhorse` commands | ❌ not supported (non-chat endpoints)     |
+| Wan / HappyHorse        | ✅ via `/wan` & `/happyhorse` commands | ✅ via `wan`/`happyhorse` custom tools + slash commands |
 | Reasoning effort        | 6-level thinking map per model        | `options.reasoningEffort` per model      |
 
 ## 🤝 Contributing

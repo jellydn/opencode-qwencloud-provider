@@ -12,9 +12,13 @@ opencode custom providers are defined entirely in `opencode.json`.
 ```
 opencode.json                     # main provider config (env-var apiKey)
 examples/opencode.inline-key.json # fallback config (inline apiKey placeholder)
+plugin/                           # runtime plugin (Wan/HappyHorse custom tools)
+command/                          # slash-command markdown files (/wan, /happyhorse)
 scripts/fetch-models.mjs          # refresh models from the live /models endpoint
 scripts/validate.mjs              # validate the JSON config files
-package.json                      # npm metadata + scripts (no deps)
+scripts/smoke-test.mjs            # end-to-end live API checks (basic, streaming, tool call, 2nd model)
+tests/plugin/                     # unit tests for the plugin (vitest, mock fetch)
+package.json                      # npm metadata + scripts + build setup
 README.md                         # user-facing docs
 CHANGELOG.md                      # release history
 LICENSE                           # MIT
@@ -23,8 +27,17 @@ LICENSE                           # MIT
 ## Commands
 
 ```bash
+# Build the plugin (TypeScript → dist/)
+npm run build               # rm -rf dist && tsc
+npm run typecheck           # tsc --noEmit
+npm run test                # vitest run (unit tests, mock fetch)
+
 # Validate the config files (no deps required, Node >= 20)
 npm run validate            # node scripts/validate.mjs
+
+# End-to-end live API checks (requires QWENCLOUD_API_KEY, hits the real API)
+QWENCLOUD_API_KEY=sk-... npm run smoke-test              # 4 checks, exit 0/2
+QWENCLOUD_API_KEY=sk-... node scripts/smoke-test.mjs --model glm-5.2 --verbose
 
 # Refresh the model list from QwenCloud (requires QWENCLOUD_API_KEY)
 QWENCLOUD_API_KEY=sk-... npm run fetch-models                # print models map
@@ -32,9 +45,11 @@ QWENCLOUD_API_KEY=sk-... node scripts/fetch-models.mjs --full # print whole open
 QWENCLOUD_API_KEY=sk-... node scripts/fetch-models.mjs --write # overwrite opencode.json
 ```
 
-There is **no build step, no tests framework, and no typechecking** — the only
-deliverable that opencode consumes is `opencode.json`. The scripts are plain
-ESM Node (.mjs) with zero dependencies.
+The **chat provider** requires no build step — the deliverable opencode
+consumes is `opencode.json` (plus helper scripts). The **plugin** has a
+TypeScript build (`tsc` → `dist/`) and unit tests (`vitest`). Plugin tests
+mock `fetch`; they do not hit the real API. The smoke-test and validate
+scripts remain plain ESM Node (.mjs) with zero dependencies.
 
 ## Architecture & key facts
 
@@ -56,6 +71,11 @@ ESM Node (.mjs) with zero dependencies.
   [models.dev](https://models.dev) catalog that opencode merges for
   cost/context metadata, so per-model cost/limit shown in the README is
   informational only and not wired into opencode.
+- **Wan & HappyHorse plugin**: uses `@opencode-ai/plugin` (`tool()` helper) to
+  register custom tools. The `tool()` helper creates a Zod-typed tool that the
+  AI calls when the user asks for image/video generation. Slash-command
+  support comes from `command/wan.md` and `command/happyhorse.md` (LLM-prompt
+  commands that instruct the AI to call the tool). See README for setup.
 - **Reasoning effort**: QwenCloud accepts a `reasoning_effort` parameter
   (`low|medium|high|max`). opencode passes model-level `options` through to
   the AI SDK, so `options.reasoningEffort` *may* work — but this is unverified
@@ -79,3 +99,19 @@ ESM Node (.mjs) with zero dependencies.
   stdout, so it is safe to pipe.
 - `validate.mjs` checks JSON syntax + required provider fields
   (`npm`, `name`, `options.baseURL`, `options.apiKey`, non-empty `models`).
+- `smoke-test.mjs` hits the **live** API with 4 checks (basic completion,
+  SSE streaming, tool call, second model). Exit codes: `0` all passed · `1`
+  missing key · `2` one or more checks failed. The `DEFAULT_BASE` constant
+  MUST stay in sync with the `baseURL` in `opencode.json` / `examples/` /
+  `fetch-models.mjs` `DEFAULT_BASE`. Prefer setting `QWENCLOUD_API_BASE` over
+  editing the constant. Never commit a real key to run it — pass via env var.
+- Unit tests (`tests/plugin/`) use vitest with mocked `fetch`. Run via
+  `npm test`. Plugin source (`plugin/`) is compiled to `dist/` by `npm run
+  build`. `@opencode-ai/plugin` is a `peerDependency` (opencode provides it
+  at runtime) and a `devDependency` (for unit tests and typechecking).
+- `smoke-test.mjs` hits the **live** API with 4 checks (basic completion,
+  SSE streaming, tool call, second model). Exit codes: `0` all passed · `1`
+  missing key · `2` one or more checks failed. The `DEFAULT_BASE` constant
+  MUST stay in sync with the `baseURL` in `opencode.json` / `examples/` /
+  `fetch-models.mjs` `DEFAULT_BASE`. Prefer setting `QWENCLOUD_API_BASE` over
+  editing the constant. Never commit a real key to run it — pass via env var.

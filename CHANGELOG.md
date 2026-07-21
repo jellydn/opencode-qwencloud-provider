@@ -18,7 +18,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `/models` endpoint, with `--full` and `--write` modes.
 - `scripts/validate.mjs` — sanity-check the config files are valid JSON with the
   required provider fields.
-- README with setup, both auth methods, usage, env vars, and a model table.
+- `scripts/smoke-test.mjs` — end-to-end live API checks (basic completion, SSE
+  streaming, tool call, second model) mirroring opencode's request shape, for
+  local verification against a real `QWENCLOUD_API_KEY`.
+- `plugin/` — opencode plugin registering `wan` and `happyhorse` custom tools
+  via `@opencode-ai/plugin` (`tool()` helper), plus slash-command support
+  (`command/wan.md`, `command/happyhorse.md`). Ported from
+  [`pi-qwencloud-provider`](https://github.com/jellydn/pi-qwencloud-provider)'s
+  Wan and HappyHorse API modules.
+- Unit tests (`tests/plugin/`, vitest, mock fetch) covering Wan and HappyHorse
+  generation flows, error paths, and request shape verification.
+- TypeScript build setup (`tsconfig.json`, `tsc` → `dist/`) — the chat
+  provider remains config-only; only the plugin requires a build step.
+- README with setup, both auth methods, usage, env vars, a model table, and
+  Wan/HappyHorse plugin documentation. Updated comparison table.
 - MIT License.
 
 ### Notes

@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>opencode-qwencloud-provider — QwenCloud models for opencode</title>
+  <meta name="description" content="Access Qwen3.8, Qwen3.7, Qwen3.6, DeepSeek V4, and GLM-5.2 through QwenCloud's OpenAI-compatible API as an opencode provider. Zero dependencies, config-only.">
+  <meta name="color-scheme" content="dark">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        fontFamily: {
+          mono: ['ui-monospace', 'SF Mono', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+          sans: ['system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+        },
+      }
+    }
+  </script>
+  <style>
+    @layer base {
+      body { -webkit-font-smoothing: antialiased; }
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, #a78bfa 0%, #67e8f9 50%, #a78bfa 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: gradient-shift 8s ease-in-out infinite;
+    }
+
+    @keyframes gradient-shift {
+      0%, 100% { background-position: 0% center; }
+      50% { background-position: 200% center; }
+    }
+
+    .config-block {
+      background: linear-gradient(135deg, rgb(30 27 46 / 0.8), rgb(23 21 31 / 0.9));
+      border: 1px solid rgb(99 102 241 / 0.15);
+      box-shadow:
+        0 0 0 1px rgb(99 102 241 / 0.05) inset,
+        0 4px 24px rgb(0 0 0 / 0.3);
+    }
+
+    .card-hover {
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .card-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgb(0 0 0 / 0.4);
+    }
+
+    .accent-border {
+      border-color: rgb(99 102 241 / 0.2);
+    }
+
+    .table-row {
+      transition: background-color 0.2s ease;
+    }
+
+    .table-row:hover {
+      background: rgb(99 102 241 / 0.06);
+    }
+
+    .pill {
+      border-radius: 9999px;
+      padding: 2px 10px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      line-height: 1.25rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .gradient-text { animation: none; }
+      .card-hover { transition: none; }
+      .card-hover:hover { transform: none; }
+    }
+
+    ::selection {
+      background: rgb(99 102 241 / 0.3);
+      color: #e0e7ff;
+    }
+  </style>
+</head>
+<body class="bg-[#0d0b14] text-[#c8c5d0] font-sans">
+
+  <!-- Nav -->
+  <nav class="fixed top-0 inset-x-0 z-50 backdrop-blur-md bg-[#0d0b14]/80 border-b border-white/[0.06]">
+    <div class="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
+      <span class="font-mono text-sm text-[#a78bfa]">opencode-qwencloud</span>
+      <a href="https://github.com/jellydn/opencode-qwencloud-provider"
+         class="text-sm text-[#8b87a0] hover:text-[#c8c5d0] transition-colors font-mono">
+        GitHub →
+      </a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="pt-32 pb-20 px-6 max-w-5xl mx-auto">
+    <div class="max-w-3xl">
+      <p class="font-mono text-xs tracking-widest uppercase text-[#67e8f9]/70 mb-6">
+        opencode provider
+      </p>
+      <h1 class="text-[2.625rem] leading-[1.15] font-bold tracking-[-0.03em] text-white mb-6">
+        QwenCloud models
+        <span class="block gradient-text">for opencode</span>
+      </h1>
+      <p class="text-lg leading-relaxed text-[#8b87a0] max-w-xl mb-10">
+        Access Qwen3.8, Qwen3.7, Qwen3.6, DeepSeek V4, and GLM&#8209;5.2 through
+        QwenCloud's OpenAI-compatible API. Zero dependencies, config-only — drop
+        in a JSON file and start coding.
+      </p>
+      <div class="flex gap-4 flex-wrap">
+        <a href="#install"
+           class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-indigo-500 hover:bg-indigo-400 text-white font-medium text-sm transition-colors">
+          Get started
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+        <a href="https://github.com/jellydn/opencode-qwencloud-provider"
+           class="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-white/[0.08] hover:border-white/[0.15] text-sm font-medium transition-colors text-[#c8c5d0]">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          View on GitHub
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Config preview -->
+  <section class="px-6 pb-20 max-w-5xl mx-auto">
+    <div class="config-block rounded-2xl p-6 md:p-8 overflow-x-auto">
+      <pre class="text-sm font-mono leading-relaxed text-[#a5a0b8]"><span class="text-[#67e8f9]">// opencode.json</span>
+<span class="text-[#6ee7b7]">"provider"</span>: {
+  <span class="text-[#6ee7b7]">"qwencloud"</span>: {
+    <span class="text-[#6ee7b7]">"npm"</span>: <span class="text-[#c084fc]">"@ai-sdk/openai-compatible"</span>,
+    <span class="text-[#6ee7b7]">"name"</span>: <span class="text-[#c084fc]">"QwenCloud"</span>,
+    <span class="text-[#6ee7b7]">"options"</span>: {
+      <span class="text-[#6ee7b7]">"baseURL"</span>: <span class="text-[#c084fc]">"https://token-plan..."</span>,
+      <span class="text-[#6ee7b7]">"apiKey"</span>: <span class="text-[#c084fc]">"{env:QWENCLOUD_API_KEY}"</span>
+    },
+    <span class="text-[#6ee7b7]">"models"</span>: { … }
+  }
+}</pre>
+    </div>
+    <p class="text-xs text-[#6b6680] mt-4 text-center font-mono">No build step. No runtime code. Just JSON.</p>
+  </section>
+
+  <!-- Models table -->
+  <section class="px-6 pb-20 max-w-5xl mx-auto">
+    <h2 class="text-sm font-mono tracking-widest uppercase text-[#67e8f9]/70 mb-3">Models</h2>
+    <p class="text-2xl font-bold text-white mb-8 tracking-[-0.02em]">Six chat models, one config</p>
+
+    <div class="overflow-x-auto rounded-xl border border-white/[0.06]">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-white/[0.06] text-left text-xs text-[#6b6680] uppercase tracking-wider">
+            <th class="px-6 py-4 font-medium">Model</th>
+            <th class="px-6 py-4 font-medium">Model ID</th>
+            <th class="px-6 py-4 font-medium hidden sm:table-cell">Context</th>
+            <th class="px-6 py-4 font-medium hidden sm:table-cell">Reasoning</th>
+          </tr>
+        </thead>
+        <tbody class="text-[#c8c5d0]">
+          <tr class="table-row border-b border-white/[0.04]">
+            <td class="px-6 py-4 font-medium text-white">Qwen3.8 Max Preview</td>
+            <td class="px-6 py-4 font-mono text-xs text-[#a78bfa]">qwen3.8-max-preview</td>
+            <td class="px-6 py-4 hidden sm:table-cell text-[#8b87a0]">262K</td>
+            <td class="px-6 py-4 hidden sm:table-cell"><span class="pill bg-indigo-500/10 text-indigo-400">Yes</span></td>
+          </tr>
+          <tr class="table-row border-b border-white/[0.04]">
+            <td class="px-6 py-4 font-medium text-white">Qwen3.7 Max</td>
+            <td class="px-6 py-4 font-mono text-xs text-[#a78bfa]">qwen3.7-max</td>
+            <td class="px-6 py-4 hidden sm:table-cell text-[#8b87a0]">262K</td>
+            <td class="px-6 py-4 hidden sm:table-cell"><span class="pill bg-indigo-500/10 text-indigo-400">Yes</span></td>
+          </tr>
+          <tr class="table-row border-b border-white/[0.04]">
+            <td class="px-6 py-4 font-medium text-white">Qwen3.7 Plus</td>
+            <td class="px-6 py-4 font-mono text-xs text-[#a78bfa]">qwen3.7-plus</td>
+            <td class="px-6 py-4 hidden sm:table-cell text-[#8b87a0]">1M</td>
+            <td class="px-6 py-4 hidden sm:table-cell"><span class="pill bg-indigo-500/10 text-indigo-400">Yes</span></td>
+          </tr>
+          <tr class="table-row border-b border-white/[0.04]">
+            <td class="px-6 py-4 font-medium text-white">Qwen3.6 Flash</td>
+            <td class="px-6 py-4 font-mono text-xs text-[#a78bfa]">qwen3.6-flash</td>
+            <td class="px-6 py-4 hidden sm:table-cell text-[#8b87a0]">131K</td>
+            <td class="px-6 py-4 hidden sm:table-cell"><span class="pill bg-indigo-500/10 text-indigo-400">Yes</span></td>
+          </tr>
+          <tr class="table-row border-b border-white/[0.04]">
+            <td class="px-6 py-4 font-medium text-white">DeepSeek V4 Pro</td>
+            <td class="px-6 py-4 font-mono text-xs text-[#a78bfa]">deepseek-v4-pro</td>
+            <td class="px-6 py-4 hidden sm:table-cell text-[#8b87a0]">1M</td>
+            <td class="px-6 py-4 hidden sm:table-cell"><span class="pill bg-indigo-500/10 text-indigo-400">Yes</span></td>
+          </tr>
+          <tr class="table-row">
+            <td class="px-6 py-4 font-medium text-white">GLM-5.2</td>
+            <td class="px-6 py-4 font-mono text-xs text-[#a78bfa]">glm-5.2</td>
+            <td class="px-6 py-4 hidden sm:table-cell text-[#8b87a0]">200K</td>
+            <td class="px-6 py-4 hidden sm:table-cell"><span class="pill bg-indigo-500/10 text-indigo-400">Yes</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Quick start -->
+  <section id="install" class="px-6 pb-20 max-w-5xl mx-auto">
+    <h2 class="text-sm font-mono tracking-widest uppercase text-[#67e8f9]/70 mb-3">Install</h2>
+    <p class="text-2xl font-bold text-white mb-8 tracking-[-0.02em]">Two steps to get started</p>
+
+    <div class="grid sm:grid-cols-2 gap-4">
+      <div class="card-hover accent-border border rounded-xl p-6 bg-[#0d0b14]">
+        <div class="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center mb-4">
+          <span class="font-mono text-xs text-indigo-400">1</span>
+        </div>
+        <h3 class="font-semibold text-white mb-2">Copy the config</h3>
+        <p class="text-sm text-[#8b87a0] mb-4">Drop <code class="font-mono text-xs bg-white/[0.06] px-1.5 py-0.5 rounded">opencode.json</code> into your global or project config.</p>
+        <pre class="text-xs font-mono text-[#a5a0b8] bg-[#0d0b14]/60 rounded-lg p-3 border border-white/[0.05]">cp opencode.json ~/.config/opencode/</pre>
+      </div>
+      <div class="card-hover accent-border border rounded-xl p-6 bg-[#0d0b14]">
+        <div class="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center mb-4">
+          <span class="font-mono text-xs text-indigo-400">2</span>
+        </div>
+        <h3 class="font-semibold text-white mb-2">Set your API key</h3>
+        <p class="text-sm text-[#8b87a0] mb-4">Export your Token Plan key — it never touches the config file.</p>
+        <pre class="text-xs font-mono text-[#a5a0b8] bg-[#0d0b14]/60 rounded-lg p-3 border border-white/[0.05]">QWENCLOUD_API_KEY=sk-... opencode</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why section -->
+  <section class="px-6 pb-20 max-w-5xl mx-auto">
+    <h2 class="text-sm font-mono tracking-widest uppercase text-[#67e8f9]/70 mb-3">Why</h2>
+    <p class="text-2xl font-bold text-white mb-8 tracking-[-0.02em]">Zero dependencies, pure config</p>
+
+    <div class="grid sm:grid-cols-3 gap-4">
+      <div class="card-hover accent-border border rounded-xl p-6 bg-[#0d0b14]">
+        <p class="text-xs font-mono text-indigo-400 mb-3">No build step</p>
+        <p class="text-sm text-[#8b87a0]">opencode reads the JSON directly. No npm install, no compile, no runtime code.</p>
+      </div>
+      <div class="card-hover accent-border border rounded-xl p-6 bg-[#0d0b14]">
+        <p class="text-xs font-mono text-indigo-400 mb-3">Env-var auth</p>
+        <p class="text-sm text-[#8b87a0]">API key interpolated from environment. Safe to commit, safe to share.</p>
+      </div>
+      <div class="card-hover accent-border border rounded-xl p-6 bg-[#0d0b14]">
+        <p class="text-xs font-mono text-indigo-400 mb-3">OpenAI-compatible</p>
+        <p class="text-sm text-[#8b87a0]">Streaming, tool calls, and usage tracking work out of the box via the standard adapter.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison -->
+  <section class="px-6 pb-20 max-w-5xl mx-auto">
+    <h2 class="text-sm font-mono tracking-widest uppercase text-[#67e8f9]/70 mb-3">Compare</h2>
+    <p class="text-2xl font-bold text-white mb-8 tracking-[-0.02em]">opencode vs pi provider</p>
+
+    <div class="overflow-x-auto rounded-xl border border-white/[0.06]">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-white/[0.06] text-left text-xs text-[#6b6680] uppercase tracking-wider">
+            <th class="px-6 py-4 font-medium"></th>
+            <th class="px-6 py-4 font-medium text-indigo-400">opencode</th>
+            <th class="px-6 py-4 font-medium">pi</th>
+          </tr>
+        </thead>
+        <tbody class="text-[#c8c5d0]">
+          <tr class="table-row border-b border-white/[0.04]">
+            <td class="px-6 py-3 text-[#8b87a0]">Form factor</td>
+            <td class="px-6 py-3">JSON config</td>
+            <td class="px-6 py-3 text-[#8b87a0]">TypeScript package</td>
+          </tr>
+          <tr class="table-row border-b border-white/[0.04]">
+            <td class="px-6 py-3 text-[#8b87a0]">Build step</td>
+            <td class="px-6 py-3">None</td>
+            <td class="px-6 py-3 text-[#8b87a0]">tsup</td>
+          </tr>
+          <tr class="table-row border-b border-white/[0.04]">
+            <td class="px-6 py-3 text-[#8b87a0]">Auth</td>
+            <td class="px-6 py-3">{env:VAR} or inline</td>
+            <td class="px-6 py-3 text-[#8b87a0]">env, /login, auth.json</td>
+          </tr>
+          <tr class="table-row border-b border-white/[0.04]">
+            <td class="px-6 py-3 text-[#8b87a0]">Model discovery</td>
+            <td class="px-6 py-3">Static, refreshable</td>
+            <td class="px-6 py-3 text-[#8b87a0]">Dynamic at startup</td>
+          </tr>
+          <tr class="table-row">
+            <td class="px-6 py-3 text-[#8b87a0]">Wan / HappyHorse</td>
+            <td class="px-6 py-3">—</td>
+            <td class="px-6 py-3 text-[#6b6680]">Yes</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="px-6 pb-32 max-w-5xl mx-auto text-center">
+    <div class="config-block rounded-2xl p-10 md:p-16">
+      <p class="text-2xl font-bold text-white mb-4 tracking-[-0.02em]">Ready to use QwenCloud with opencode?</p>
+      <p class="text-[#8b87a0] mb-8 max-w-md mx-auto">One JSON file, one env var. That's it.</p>
+      <a href="https://github.com/jellydn/opencode-qwencloud-provider"
+         class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-indigo-500 hover:bg-indigo-400 text-white font-medium text-sm transition-colors">
+        View on GitHub
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="border-t border-white/[0.06] px-6 py-8">
+    <div class="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#6b6680]">
+      <span>MIT · <a href="https://github.com/jellydn" class="hover:text-[#8b87a0] transition-colors">jellydn</a></span>
+      <div class="flex gap-6">
+        <a href="https://opencode.ai" class="hover:text-[#8b87a0] transition-colors">opencode</a>
+        <a href="https://home.qwencloud.com" class="hover:text-[#8b87a0] transition-colors">QwenCloud</a>
+        <a href="https://github.com/jellydn/opencode-qwencloud-provider" class="hover:text-[#8b87a0] transition-colors">GitHub</a>
+      </div>
+    </div>
+  </footer>
+
+</body>
+</html>

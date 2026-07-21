@@ -9,8 +9,6 @@
  * @module qwencloud-plugin-wan
  */
 
-import { writeFile, mkdir } from "node:fs/promises";
-import { join } from "node:path";
 import {
   resolveApiBase,
   requireApiKey,
@@ -21,6 +19,8 @@ import {
   WAN_SIZES,
 } from "./env";
 import { isRecord } from "./utils";
+import { createApiClient, PluginError } from "./api-client";
+import { downloadFile } from "./download-file";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -52,7 +52,7 @@ export interface WanResult {
 
 /**
  * Call the Wan image generation endpoint and return the resulting image URL.
- * Throws on API errors, network failures, or missing API key.
+ * Throws PluginError on API errors, network failures, or missing API key.
  */
 export async function generateWanImage(
   prompt: string,
@@ -62,23 +62,29 @@ export async function generateWanImage(
 
   const model = options.model ?? DEFAULT_WAN_MODEL;
   if (!WAN_MODELS.has(model)) {
-    throw new Error(`Unknown Wan model: ${model}. Supported: ${[...WAN_MODELS].join(", ")}`);
+    throw new PluginError(
+      `Unknown Wan model: ${model}. Supported: ${[...WAN_MODELS].join(", ")}`,
+      "INVALID_MODEL",
+    );
   }
 
   const size = options.size ?? "1K";
   if (!WAN_SIZES.has(size)) {
-    throw new Error(`Unknown size: ${size}. Supported: ${[...WAN_SIZES].join(", ")}`);
+    throw new PluginError(
+      `Unknown size: ${size}. Supported: ${[...WAN_SIZES].join(", ")}`,
+      "INVALID_SIZE",
+    );
   }
 
   const n = options.n ?? 1;
   if (n < 1 || n > 4) {
-    throw new Error(`n must be 1-4, got ${n}`);
+    throw new PluginError(`n must be 1-4, got ${n}`, "INVALID_ARGUMENT");
   }
 
   const chatBase = resolveApiBase();
   const root = rootApiBase(chatBase);
   const url = `${root}${WAN_ENDPOINT}`;
-  const fetchFn = options.fetchImpl ?? globalThis.fetch;
+  const client = createApiClient(apiKey, options.fetchImpl);
 
   const body = {
     model,
@@ -88,43 +94,28 @@ export async function generateWanImage(
     parameters: { size, n },
   };
 
-  const response = await fetchFn(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(60_000),
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text().catch(() => "(no body)");
-    throw new Error(`Wan API returned ${response.status}: ${errorBody.slice(0, 300)}`);
-  }
-
-  const data: unknown = await response.json();
-  if (!isRecord(data)) throw new Error("Unexpected Wan API response format");
+  const data: unknown = await client.post(url, body, AbortSignal.timeout(60_000));
+  if (!isRecord(data)) throw new PluginError("Unexpected Wan API response format", "PARSE_ERROR");
 
   const output = data.output;
-  if (!isRecord(output)) throw new Error("Wan response missing output field");
+  if (!isRecord(output)) throw new PluginError("Wan response missing output field", "PARSE_ERROR");
 
   const choices = output.choices;
   if (!Array.isArray(choices) || choices.length === 0) {
-    throw new Error("Wan response has no images");
+    throw new PluginError("Wan response has no images", "PARSE_ERROR");
   }
 
   const msg = (choices[0] as Record<string, unknown>)?.message;
-  if (!isRecord(msg)) throw new Error("Wan response missing message content");
+  if (!isRecord(msg)) throw new PluginError("Wan response missing message content", "PARSE_ERROR");
 
   const items = msg.content;
   if (!Array.isArray(items) || items.length === 0) {
-    throw new Error("Wan response content is empty");
+    throw new PluginError("Wan response content is empty", "PARSE_ERROR");
   }
 
   const item = items[0] as Record<string, unknown>;
   const imageUrl = typeof item?.image === "string" ? item.image : undefined;
-  if (!imageUrl) throw new Error("No image URL in Wan response");
+  if (!imageUrl) throw new PluginError("No image URL in Wan response", "PARSE_ERROR");
 
   return { url: imageUrl as string, model, size };
 }
@@ -140,20 +131,7 @@ export async function downloadWanImage(
   outputDir: string,
   fetchImpl: typeof globalThis.fetch = globalThis.fetch,
 ): Promise<string> {
-  const response = await fetchImpl(imageUrl, {
-    signal: AbortSignal.timeout(120_000),
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to download image: ${response.status} ${response.statusText}`);
-  }
-
-  const buffer = Buffer.from(await response.arrayBuffer());
-  await mkdir(outputDir, { recursive: true });
-
-  const filename = `wan-${Date.now()}.png`;
-  const localPath = join(outputDir, filename);
-  await writeFile(localPath, buffer);
-  return localPath;
+  return downloadFile(imageUrl, outputDir, `wan-${Date.now()}.png`, fetchImpl);
 }
 
 // ─── Full pipeline ──────────────────────────────────────────────────────────

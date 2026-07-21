@@ -9,8 +9,7 @@
  * @module qwencloud-plugin-happyhorse
  */
 
-import { writeFile, mkdir } from "node:fs/promises";
-import { join, basename } from "node:path";
+import { basename } from "node:path";
 import {
   resolveApiBase,
   requireApiKey,
@@ -23,6 +22,8 @@ import {
   MAX_POLL_ATTEMPTS,
 } from "./env";
 import { isRecord, stringValue } from "./utils";
+import { PluginError } from "./api-client";
+import { downloadFile } from "./download-file";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -77,7 +78,10 @@ async function submitTask(
     input.prompt = prompt;
   } else if (model.endsWith("-i2v") || model.endsWith("-r2v")) {
     if (!imageUrl) {
-      throw new Error(`Model ${model} requires an image URL. Pass { imageUrl } in options.`);
+      throw new PluginError(
+        `Model ${model} requires an image URL. Pass { imageUrl } in options.`,
+        "MISSING_ARGUMENT",
+      );
     }
     input.prompt = prompt;
     input.image_url = imageUrl;
@@ -89,6 +93,8 @@ async function submitTask(
     parameters: { resolution, ratio, duration },
   };
 
+  // HappyHorse needs an extra async header; use a raw fetch pass-through
+  // since the client.post doesn't support custom headers yet.
   const response = await fetchFn(submitUrl, {
     method: "POST",
     headers: {
@@ -102,17 +108,25 @@ async function submitTask(
 
   if (!response.ok) {
     const errorBody = await response.text().catch(() => "(no body)");
-    throw new Error(`HappyHorse API returned ${response.status}: ${errorBody.slice(0, 300)}`);
+    throw new PluginError(
+      `HappyHorse API returned ${response.status}: ${errorBody.slice(0, 300)}`,
+      "HTTP_ERROR",
+      { status: response.status, retryable: response.status >= 500 },
+    );
   }
 
   const data: unknown = await response.json();
-  if (!isRecord(data)) throw new Error("Unexpected HappyHorse API response format");
+  if (!isRecord(data)) {
+    throw new PluginError("Unexpected HappyHorse API response format", "PARSE_ERROR");
+  }
 
   const output = data.output;
-  if (!isRecord(output)) throw new Error("HappyHorse response missing output field");
+  if (!isRecord(output)) {
+    throw new PluginError("HappyHorse response missing output field", "PARSE_ERROR");
+  }
 
   const taskId = stringValue(output.task_id);
-  if (!taskId) throw new Error("HappyHorse response missing task_id");
+  if (!taskId) throw new PluginError("HappyHorse response missing task_id", "PARSE_ERROR");
 
   return taskId;
 }
@@ -139,31 +153,46 @@ async function pollTask(
 
     if (!response.ok) {
       const errorBody = await response.text().catch(() => "(no body)");
-      throw new Error(`Task poll returned ${response.status}: ${errorBody.slice(0, 300)}`);
+      throw new PluginError(
+        `Task poll returned ${response.status}: ${errorBody.slice(0, 300)}`,
+        "POLL_ERROR",
+        { status: response.status, retryable: response.status >= 500 },
+      );
     }
 
     const data: unknown = await response.json();
-    if (!isRecord(data)) throw new Error("Unexpected task poll response format");
+    if (!isRecord(data)) {
+      throw new PluginError("Unexpected task poll response format", "PARSE_ERROR");
+    }
 
     const output = data.output;
-    if (!isRecord(output)) throw new Error("Task poll response missing output field");
+    if (!isRecord(output)) {
+      throw new PluginError("Task poll response missing output field", "PARSE_ERROR");
+    }
 
     const status = stringValue(output.task_status);
 
     if (status === "SUCCEEDED") {
       const videoUrl = stringValue(output.video_url);
-      if (!videoUrl) throw new Error("Task succeeded but no video_url in response");
+      if (!videoUrl)
+        throw new PluginError("Task succeeded but no video_url in response", "PARSE_ERROR");
       return videoUrl;
     }
 
     if (status === "FAILED" || status === "CANCELLED" || status === "UNKNOWN") {
       const message = stringValue(output.message) ?? "no details";
-      throw new Error(`Video generation ${status.toLowerCase()}: ${message}`);
+      throw new PluginError(`Video generation ${status.toLowerCase()}: ${message}`, "TASK_FAILED", {
+        retryable: false,
+      });
     }
     // PENDING or RUNNING — continue polling.
   }
 
-  throw new Error(`Video generation timed out after ${maxPollAttempts} poll attempts`);
+  throw new PluginError(
+    `Video generation timed out after ${maxPollAttempts} poll attempts`,
+    "TIMEOUT",
+    { retryable: true },
+  );
 }
 
 // ─── Download ───────────────────────────────────────────────────────────────
@@ -173,23 +202,11 @@ async function downloadVideo(
   outputDir: string,
   fetchFn: typeof globalThis.fetch,
 ): Promise<string> {
-  const response = await fetchFn(videoUrl, {
-    signal: AbortSignal.timeout(180_000),
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to download video: ${response.status} ${response.statusText}`);
-  }
-
-  const buffer = Buffer.from(await response.arrayBuffer());
-  await mkdir(outputDir, { recursive: true });
-
   const urlPath = videoUrl.split("?")[0];
   const urlName = basename(urlPath);
   const filename =
     urlName && urlName.includes(".") ? `happyhorse-${urlName}` : `happyhorse-${Date.now()}.mp4`;
-  const localPath = join(outputDir, filename);
-  await writeFile(localPath, buffer);
-  return localPath;
+  return downloadFile(videoUrl, outputDir, filename, fetchFn, 180_000);
 }
 
 // ─── Full pipeline ──────────────────────────────────────────────────────────
@@ -211,8 +228,9 @@ export async function generateAndDownloadHappyHorseVideo(
 
   const model = options.model ?? DEFAULT_HAPPYHORSE_MODEL;
   if (!HAPPYHORSE_MODELS.has(model)) {
-    throw new Error(
+    throw new PluginError(
       `Unknown HappyHorse model: ${model}. Supported: ${[...HAPPYHORSE_MODELS].join(", ")}`,
+      "INVALID_MODEL",
     );
   }
 

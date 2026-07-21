@@ -67,8 +67,9 @@ export function resolveApiKey(
 
 /**
  * Attempt to read an inline API key from opencode's provider config.
- * Returns undefined if the config uses {env:...} interpolation or doesn't
- * exist.
+ *
+ * This mirrors scripts/lib/read-config-key.mjs (the canonical copy used
+ * by smoke-test.mjs). Keep both implementations in sync.
  */
 function readConfigApiKey(): string | undefined {
   try {
@@ -83,7 +84,6 @@ function readConfigApiKey(): string | undefined {
     const options = qwencloud?.options as Record<string, string> | undefined;
     const apiKey = options?.apiKey;
 
-    // Only use inline keys (plain strings), not {env:VAR} interpolation.
     if (typeof apiKey === "string" && !apiKey.startsWith("{")) {
       return apiKey.trim() || undefined;
     }

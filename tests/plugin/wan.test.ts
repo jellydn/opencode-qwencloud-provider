@@ -25,10 +25,19 @@ describe("generateWanImage", () => {
   });
 
   it("throws when no API key is provided", async () => {
-    // simulates QWENCLOUD_API_KEY not set
-    await expect(() =>
-      generateWanImage("a cat", { apiKey: "", fetchImpl: fetchMock as any }),
-    ).rejects.toThrow("No QwenCloud API key");
+    // Isolate from env var AND opencode.json config
+    const origHome = process.env.HOME;
+    const origKey = process.env.QWENCLOUD_API_KEY;
+    process.env.HOME = "/nonexistent";
+    delete process.env.QWENCLOUD_API_KEY;
+    try {
+      await expect(() =>
+        generateWanImage("a cat", { apiKey: "", fetchImpl: fetchMock as any }),
+      ).rejects.toThrow("No QwenCloud API key");
+    } finally {
+      process.env.HOME = origHome;
+      if (origKey !== undefined) process.env.QWENCLOUD_API_KEY = origKey;
+    }
   });
 
   it("throws for unsupported model", async () => {
@@ -119,7 +128,7 @@ describe("generateWanImage", () => {
 
     await expect(() =>
       generateWanImage("a cat", { apiKey: FAKE_KEY, fetchImpl: fetchMock as any }),
-    ).rejects.toThrow(/Wan API returned 401/);
+    ).rejects.toThrow(/API returned 401/);
   });
 
   it("throws on malformed response (missing output.choices)", async () => {
@@ -164,6 +173,6 @@ describe("downloadWanImage", () => {
 
     await expect(async () => {
       await downloadWanImage("https://expired.url/image.png", "/tmp/wan-test", fetchMock as any);
-    }).rejects.toThrow(/Failed to download image/);
+    }).rejects.toThrow(/Download failed: 404/);
   });
 });

@@ -1,6 +1,7 @@
 ---
 description: Generate a video with QwenCloud HappyHorse
 ---
+
 Call the `happyhorse` tool with the provided prompt to generate a video using QwenCloud HappyHorse.
 
 Tool to use: `happyhorse`

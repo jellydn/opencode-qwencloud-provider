@@ -1,0 +1,42 @@
+{
+  "name": "opencode-qwencloud-provider",
+  "version": "0.1.0",
+  "description": "QwenCloud provider config for opencode — Qwen3.8, Qwen3.7, Qwen3.6, DeepSeek V4, and GLM-5.2 via QwenCloud's OpenAI-compatible API.",
+  "keywords": [
+    "ai",
+    "deepseek",
+    "glm",
+    "llm",
+    "opencode",
+    "opencode-config",
+    "opencode-provider",
+    "provider",
+    "qwen",
+    "qwencloud"
+  ],
+  "homepage": "https://github.com/jellydn/opencode-qwencloud-provider#readme",
+  "bugs": {
+    "url": "https://github.com/jellydn/opencode-qwencloud-provider/issues"
+  },
+  "license": "MIT",
+  "author": "jellydn",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jellydn/opencode-qwencloud-provider.git"
+  },
+  "type": "module",
+  "files": [
+    "opencode.json",
+    "examples",
+    "scripts",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "fetch-models": "node scripts/fetch-models.mjs",
+    "validate": "node scripts/validate.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

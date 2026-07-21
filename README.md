@@ -98,6 +98,11 @@ QWENCLOUD_API_KEY=your_key_here opencode
 
 ✅ Key never touches the config file — safe to commit.
 
+> **Plugin note:** The Wan & HappyHorse plugin reads the API key from three
+> sources: the inline `apiKey` set via `/connect`, the `QWENCLOUD_API_KEY`
+> env var, or a tool-level override. So you can use `/connect` to store the
+> key and the plugin will pick it up without an env var.
+
 > ⚠️ If `QWENCLOUD_API_KEY` is unset, opencode silently substitutes an empty
 > string (its `{env:VAR}` expansion returns `""` rather than erroring), so the
 > first auth failure shows up at request time, not at config load. Make sure
@@ -279,7 +284,7 @@ opencode --model qwencloud/qwen3.7-plus
 
 | Variable              | Description                       | Default                                                                  |
 | --------------------- | --------------------------------- | ------------------------------------------------------------------------ |
-| `QWENCLOUD_API_KEY`   | Your QwenCloud API key            | —                                                                        |
+| `QWENCLOUD_API_KEY`   | Your QwenCloud API key (optional if using `/connect` for the plugin) | —                                                                        |
 | `QWENCLOUD_API_BASE`  | Override the API base URL         | `https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1` |
 
 ## 📜 Scripts
@@ -290,8 +295,9 @@ Runs [`scripts/smoke-test.mjs`](scripts/smoke-test.mjs) — four **live** API
 checks against the QwenCloud chat completions endpoint, mirroring the request
 shape that opencode's `@ai-sdk/openai-compatible` transport sends. Use this to
 confirm the provider works end-to-end before opening a PR or after any
-config/model-list change. Requires `QWENCLOUD_API_KEY` and hits the real API
-(incurs a small token cost).
+config/model-list change. Reads the API key from `QWENCLOUD_API_KEY` env var
+or from `~/.config/opencode/opencode.json` (set via `/connect`). Hits the real
+API (incurs a small token cost).
 
 The four checks:
 
@@ -377,7 +383,7 @@ API, but differ in shape:
 
 | Command                    | Description                                   |
 | -------------------------- | --------------------------------------------- |
-| `npm run lint`             | Lint with oxlint (TypeScript, unicorn, import) |
+| `npm run lint`             | Lint with oxlint (TypeScript, unicorn, oxc, import) |
 | `npm run format`           | Auto-format with oxfmt                        |
 | `npm run format:check`     | Check formatting without modifying files      |
 | `npm run typecheck`        | TypeScript type-checking (`tsc --noEmit`)      |
@@ -398,8 +404,8 @@ publishes to npm when a `v*` tag is pushed.
 
 1. Don't commit real API keys. Keep `opencode.json` on `{env:QWENCLOUD_API_KEY}`
    and use the placeholder in `examples/`.
-2. Run `npm run format && npm run lint && npm run typecheck && npm test` before
-   committing.
+2. Run `npm run format && npm run lint && npm run validate && npm run typecheck && npm test`
+   before committing (pre-commit hooks do this automatically).
 3. When editing the model list, update **all four** places together so the
    curated display names stay in sync: `opencode.json`,
    `examples/opencode.inline-key.json`, the model table in this README, **and**

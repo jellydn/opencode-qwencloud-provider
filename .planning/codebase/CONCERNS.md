@@ -3,9 +3,8 @@
 ## Known issues
 
 ### 1. No npm publication yet ✅
-The package is not published to npm, but the infrastructure is in place:
-`release.yml` workflow + `bumpp` scripts. Needs `NPM_TOKEN` secret in
-GitHub and `npm run release:patch` to go live.
+Published v0.1.1 to npm via the `release.yml` workflow. Requires `NPM_TOKEN`
+in GitHub secrets.
 
 ### 2. Tests not run in CI ✅
 Resolved. The `validate` workflow now includes a `test` job that runs
@@ -40,16 +39,15 @@ of the same model. Not implemented.
 
 ### 9. Local plugin requires single-file bundle
 Opencode auto-discovers ALL `.js` files in `~/.config/opencode/plugins/`
-and loads each as a Plugin. The build now produces a bundled single file
-via `bundle-plugin.mjs`, but this is an extra build step and a deviation
+and loads each as a Plugin. The build produces a bundled single file via
+`tsup` (two-output config in `tsup.config.ts`), but this is a deviation
 from the standard multi-file npm package structure. When published to npm,
 the `plugin` array approach avoids this issue entirely, making the bundle
 only necessary for local installation.
 
-### 10. `fix-extensions.mjs` is fragile
-The regex-based approach to adding `.js` extensions could match non-import
-strings. Anchored to `^import` lines with the `m` flag, but dynamic imports
-(`import("./wan")`) wouldn't be caught. Not a current issue.
+### 10. `fix-extensions.mjs` is fragile ✅
+Resolved. Replaced by `tsup`, which handles ESM extensions and bundling
+natively. `fix-extensions.mjs` and `bundle-plugin.mjs` have been removed.
 
 ## Potential improvements
 
@@ -94,7 +92,7 @@ strings. Anchored to `^import` lines with the `m` flag, but dynamic imports
 4. **Url imports in test files** ✅ — fixed: extensionless import in
    `tests/plugin/utils.test.ts`.
 
-5. **Single-file bundler** — `bundle-plugin.mjs` uses line-based text
-   replacement rather than AST parsing. Could break if compiled output
-   format changes (e.g., TypeScript changes its emit style for `export`
-   declarations). Currently stable.
+5. **tsup bundler** — The two-output config (`tsup.config.ts`) relies on
+   `external`/`noExternal` patterns and `clean: false` on the second pass.
+   If tsup changes its multi-build semantics, the single-file bundle could
+   break. Currently stable.

@@ -27,9 +27,7 @@ opencode-qwencloud-provider/
 ├── scripts/                          # Zero-dependency Node ESM scripts (.mjs)
 │   ├── fetch-models.mjs              # Query /models, regenerate model list
 │   ├── validate.mjs                  # Sanity-check JSON configs
-│   ├── smoke-test.mjs                # 4 live API checks
-│   ├── fix-extensions.mjs            # Post-tsc: add .js to relative imports
-│   └── bundle-plugin.mjs             # Concatenate dist/ into single file
+│   └── smoke-test.mjs                # 4 live API checks
 │
 ├── tests/plugin/                     # Unit tests (vitest, mock fetch)
 │   ├── wan.test.ts                   # Wan generation + download (9 tests)
@@ -43,7 +41,9 @@ opencode-qwencloud-provider/
 │   ├── validate.yml                  # CI: 3 parallel jobs on push/PR
 │   └── release.yml                   # CI: npm publish on v* tags
 │
-├── dist/                             # Build output (tsc → dist/)
+├── tsup.config.ts                    # tsup: two-build config (multi-file + single-file)
+│
+├── dist/                             # Build output (tsup → dist/)
 │   ├── plugin/                       # Compiled .js + .d.ts (5 files)
 │   └── opencode-qwencloud-provider.js # Single-file bundle for opencode auto-discovery
 │
@@ -67,7 +67,7 @@ opencode-qwencloud-provider/
 | **Non-chat filter (word-boundary)** | `scripts/fetch-models.mjs` → `isNonChat()` |
 | **Lint config**                   | `.oxlintrc.json` (typescript, unicorn, oxc, import) |
 | **Format config**                 | `.oxfmtrc.json` (default)                  |
-| **Build pipeline**                | `package.json` → `build` script (rm -rf dist && tsc && fix-extensions && bundle-plugin) |
+| **Build pipeline**                | `package.json` → `build` script (`rm -rf dist && tsup`) |
 
 ## Naming conventions
 

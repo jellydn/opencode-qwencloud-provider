@@ -36,11 +36,10 @@
 
 ### Tier 2 — Wan/HappyHorse plugin (runtime TypeScript)
 
-- Source in `plugin/` (5 files), compiled to `dist/plugin/` by `tsc`
-- **Post-build pipeline:**
-  1. `tsc` — compile TypeScript to `dist/plugin/*.js`
-  2. `fix-extensions.mjs` — add `.js` to relative imports (Bun requires extensions for ESM)
-  3. `bundle-plugin.mjs` — concatenate all files into single `dist/opencode-qwencloud-provider.js`
+- Source in `plugin/` (5 files), compiled and bundled by `tsup`
+- **Build pipeline:** `tsup` (via `tsup.config.ts`) produces two outputs:
+  1. Multi-file `dist/plugin/` (with `.d.ts`) — the npm package entry point
+  2. Single-file `dist/opencode-qwencloud-provider.js` — for opencode local plugin auto-discovery
 - The single-file bundle is required because opencode auto-discovers ALL `.js`
   files in `~/.config/opencode/plugins/` and tries to load each as a Plugin.
   Non-plugin files (env.js, utils.js) cause "Unexpected server error".
@@ -89,19 +88,12 @@ each one as a Plugin. Our multi-file compiled output (5 files) includes auxiliar
 files that don't export Plugin functions, causing opencode to crash. Bundling into
 a single file that only exports Plugin functions solves this.
 
-### Why `replace` instead of `delete` in the bundler?
+### Why tsup instead of raw tsc?
 
-The first bundler implementation stripped `export ` lines entirely, which broke
-multi-line declarations like `export const X = new Set([\n  "a",\n  "b"\n]);`.
-The fix replaces `export const` → `const`, `export function` → `function`, etc.,
-preserving the multi-line structure.
-
-### Why `fix-extensions.mjs` before bundling?
-
-TypeScript with `moduleResolution: "bundler"` preserves extensionless imports
-in compiled output. Bun requires explicit `.js` extensions for ESM imports.
-The fix script adds `.js` to relative imports before bundling (the bundle strips
-all internal imports anyway, but the fix is needed for the intermediary dist/ files).
+The old pipeline (`tsc` → `fix-extensions.mjs` → `bundle-plugin.mjs`) was fragile.
+tsup handles ESM extensions and bundling natively in a single step. The two-output
+config (`tsup.config.ts`) produces both the npm package (multi-file `dist/plugin/`
+with `.d.ts`) and the opencode single-file bundle (`dist/opencode-qwencloud-provider.js`).
 
 ### Why port from pi provider instead of sharing code?
 

@@ -7,7 +7,7 @@
 | **Runtime**    | Node.js ≥ 20                                | Required by `engines.node` in `package.json`                   |
 | **Module**     | ESM (`"type": "module"`)                    | All source uses `import`/`export`, not CommonJS                |
 | **TypeScript** | TypeScript 5.5+ (`^5.5.0`)                  | Strict mode, ES2022 target, bundler module resolution          |
-| **Build**      | `tsc` (TypeScript compiler)                 | Emits to `dist/`; chat provider is config-only (no build)      |
+| **Build**      | `tsup` (TypeScript bundler)               | Produces multi-file `dist/plugin/` + single-file bundle; chat provider is config-only |
 
 ## Dependencies
 
@@ -28,10 +28,11 @@
 | Package                  | Version  | Notes                                                              |
 | ------------------------ | -------- | ------------------------------------------------------------------ |
 | `@opencode-ai/plugin`    | ^1.18.0  | Used for type-checking and tests                                   |
-| `@types/node`            | ^20.0.0  | Node.js type definitions                                           |
+| `@types/node`            | ^24.0.0  | Node.js type definitions                                           |
 | `bumpp`                  | ^12.0.0  | Automated version bumping, commit, push, and tagging               |
 | `oxfmt`                  | ^0.59.0  | Fast code formatter (successor to dprint)                         |
 | `oxlint`                 | ^1.71.0  | Fast TypeScript linter with unicorn, import, and oxc plugins       |
+| `tsup`                   | ^8.5.1   | ESM bundler — produces multi-file dist + single-file plugin bundle |
 | `typescript`             | ^5.5.0   | Compiler                                                           |
 | `vitest`                 | ^4.0.0   | Test runner + assertions + mocking                                 |
 
@@ -45,18 +46,17 @@
 | `validate.mjs`          | `scripts/validate.mjs`    | Sanity-check JSON configs have required fields |
 | `smoke-test.mjs`        | `scripts/smoke-test.mjs`  | 4 live API checks (basic, stream, tool call, 2nd model) |
 
-### Build pipeline scripts
+### Build configuration
 
-| Script                  | File                      | Purpose                                    |
-| ----------------------- | ------------------------- | ------------------------------------------ |
-| `fix-extensions.mjs`    | `scripts/fix-extensions.mjs` | Post-tsc: adds `.js` extensions to relative ESM imports for Bun compatibility |
-| `bundle-plugin.mjs`     | `scripts/bundle-plugin.mjs`  | Post-build: concatenates all compiled files into a single `.js` bundle for opencode auto-discovery |
+| File              | Purpose                                                          |
+| ----------------- | ---------------------------------------------------------------- |
+| `tsup.config.ts`  | Two-build config: multi-file `dist/plugin/` (with `.d.ts`) for npm, single-file `dist/opencode-qwencloud-provider.js` for local plugins |
 
 ### npm scripts
 
 | Command               | Pipeline                                     |
 | --------------------- | -------------------------------------------- |
-| `build`               | `rm -rf dist && tsc && node scripts/fix-extensions.mjs && node scripts/bundle-plugin.mjs` |
+| `build`               | `rm -rf dist && tsup`                        |
 | `lint`                | `oxlint --config .oxlintrc.json plugin/ tests/` |
 | `format`              | `oxfmt --write plugin/ tests/`               |
 | `format:check`        | `oxfmt --check plugin/ tests/`               |

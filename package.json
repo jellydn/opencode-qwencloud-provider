@@ -1,6 +1,6 @@
 {
   "name": "opencode-qwencloud-provider",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "QwenCloud provider for opencode — chat models (Qwen3.8, Qwen3.7, Qwen3.6, DeepSeek V4, GLM-5.2) via OpenAI-compatible API, plus Wan image generation and HappyHorse video generation as a plugin.",
   "exports": {
     ".": {

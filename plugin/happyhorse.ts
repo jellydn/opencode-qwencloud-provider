@@ -22,7 +22,7 @@ import {
   MAX_POLL_ATTEMPTS,
 } from "./env";
 import { isRecord, stringValue } from "./utils";
-import { PluginError } from "./api-client";
+import { createApiClient, PluginError } from "./api-client";
 import { downloadFile } from "./download-file";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -93,29 +93,10 @@ async function submitTask(
     parameters: { resolution, ratio, duration },
   };
 
-  // HappyHorse needs an extra async header; use a raw fetch pass-through
-  // since the client.post doesn't support custom headers yet.
-  const response = await fetchFn(submitUrl, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "X-DashScope-Async": "enable",
-    },
-    body: JSON.stringify(body),
-    signal: AbortSignal.timeout(60_000),
+  const client = createApiClient(apiKey, fetchFn);
+  const data: unknown = await client.post(submitUrl, body, AbortSignal.timeout(60_000), {
+    "X-DashScope-Async": "enable",
   });
-
-  if (!response.ok) {
-    const errorBody = await response.text().catch(() => "(no body)");
-    throw new PluginError(
-      `HappyHorse API returned ${response.status}: ${errorBody.slice(0, 300)}`,
-      "HTTP_ERROR",
-      { status: response.status, retryable: response.status >= 500 },
-    );
-  }
-
-  const data: unknown = await response.json();
   if (!isRecord(data)) {
     throw new PluginError("Unexpected HappyHorse API response format", "PARSE_ERROR");
   }

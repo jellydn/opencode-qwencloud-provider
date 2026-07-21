@@ -29,7 +29,12 @@ export class PluginError extends Error {
 
 export interface ApiClient {
   /** POST JSON to an endpoint. Returns parsed JSON. */
-  post(url: string, body: unknown, signal?: AbortSignal): Promise<unknown>;
+  post(
+    url: string,
+    body: unknown,
+    signal?: AbortSignal,
+    extraHeaders?: Record<string, string>,
+  ): Promise<unknown>;
   /** GET a binary resource. Returns arrayBuffer. */
   getBuffer(url: string, signal?: AbortSignal): Promise<ArrayBuffer>;
 }
@@ -48,12 +53,18 @@ export function createApiClient(
   apiKey: string,
   fetchFn: typeof globalThis.fetch = globalThis.fetch,
 ): ApiClient {
-  async function post(url: string, body: unknown, signal?: AbortSignal): Promise<unknown> {
+  async function post(
+    url: string,
+    body: unknown,
+    signal?: AbortSignal,
+    extraHeaders?: Record<string, string>,
+  ): Promise<unknown> {
     const response = await fetchFn(url, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
+        ...extraHeaders,
       },
       body: JSON.stringify(body),
       signal,

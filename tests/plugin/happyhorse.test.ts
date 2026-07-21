@@ -178,6 +178,6 @@ describe("generateAndDownloadHappyHorseVideo", () => {
       maxPollAttempts: 1,
     });
 
-    await expect(promise).rejects.toThrow(/HappyHorse API returned 500/);
+    await expect(promise).rejects.toThrow(/API returned 500/);
   });
 });

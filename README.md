@@ -189,25 +189,40 @@ autonomously when you ask for image or video generation — just say
 
 ### Setup (local plugin)
 
-Copy the plugin and command files into your opencode config:
+> **Important**: opencode scans ALL `.js` files directly in the plugins
+> directory as standalone plugins. Use the single-file bundled build —
+> copying the full `dist/plugin/` directory will crash opencode.
 
 ```bash
-cp -R plugin/ ~/.config/opencode/plugin/
-cp -R command/ ~/.config/opencode/command/
+# Option 1: Clone and build, then copy the single bundled file
+cd opencode-qwencloud-provider
+npm install && npm run build
+cp dist/opencode-qwencloud-provider.js ~/.config/opencode/plugins/
+
+# Option 2: If you've already built (npm run build), just copy the bundle
+cp dist/opencode-qwencloud-provider.js ~/.config/opencode/plugins/
 ```
+
+Also copy the slash-command files:
+
+```bash
+cp command/wan.md ~/.config/opencode/command/
+cp command/happyhorse.md ~/.config/opencode/command/
+```
+
+Then restart opencode. The `wan` and `happyhorse` tools will be available.
 
 ### Setup (npm plugin)
 
-Add to your opencode.json:
+Once published, add to your opencode.json:
 
 ```json
 {
   "plugin": ["opencode-qwencloud-provider"]
 }
 ```
-
-Then restart opencode. The `wan` and `happyhorse` tools will be available
-in any session.
+opencode installs npm plugins automatically at startup via Bun. No manual
+copy needed.
 
 ### Wan image generation
 

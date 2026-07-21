@@ -10,7 +10,7 @@ GitHub and `npm run release:patch` to go live.
 ### 2. Tests not run in CI ✅
 Resolved. The `validate` workflow now includes a `test` job that runs
 `npm ci` + `npm run typecheck` + `npm test` (22 vitest tests) on every
-push and PR, in parallel with the config validation and lint jobs.
+push and PR.
 
 ### 3. Plugin has no versioning story
 Both `opencode.json` (chat models) and `plugin/` (Wan/HappyHorse)
@@ -23,82 +23,78 @@ the exact casing shown in the model table.
 
 ### 5. HappyHorse has no progress reporting
 During the poll loop (up to 10 minutes), the tool provides no
-incremental feedback to opencode. The AI just waits. For a better UX,
-the tool could use opencode's progress/notification API (if available).
+incremental feedback to opencode. The AI just waits.
 
 ### 6. OSS URL expiry risk
-Both Wan and HappyHorse return temporary OSS URLs that expire after
-~24 hours. The plugin downloads them immediately, but if the download
-fails (network error after generation), the URL is lost and a new
-generation must be triggered (incurring cost).
+Both Wan and HappyHorse return temporary OSS URLs (~24h). The plugin
+downloads them immediately, but if download fails after generation,
+the URL is lost and a new generation must be triggered (cost).
 
 ### 7. `reasoningEffort` is unverified
-The README documents `options.reasoningEffort` as experimental for
-`@ai-sdk/openai-compatible`. This has not been tested against a real
-opencode version. The risk is that users set `reasoningEffort` in
-their config and it silently passes through without effect.
+The README documents `options.reasoningEffort` as experimental.
+Untested against a real opencode version.
 
 ### 8. No model variant support
-opencode supports model `variants` for exposing multiple configuration
-profiles of the same model (e.g., `deepseek-v4-pro` at different
-reasoning effort levels). This is not implemented — users must
-experiment with the `options` block directly.
+opencode supports model `variants` for multiple configuration profiles
+of the same model. Not implemented.
+
+### 9. Local plugin requires single-file bundle
+Opencode auto-discovers ALL `.js` files in `~/.config/opencode/plugins/`
+and loads each as a Plugin. The build now produces a bundled single file
+via `bundle-plugin.mjs`, but this is an extra build step and a deviation
+from the standard multi-file npm package structure. When published to npm,
+the `plugin` array approach avoids this issue entirely, making the bundle
+only necessary for local installation.
+
+### 10. `fix-extensions.mjs` is fragile
+The regex-based approach to adding `.js` extensions could match non-import
+strings. Anchored to `^import` lines with the `m` flag, but dynamic imports
+(`import("./wan")`) wouldn't be caught. Not a current issue.
 
 ## Potential improvements
 
 ### Low effort
-- Add `npm test` to CI workflow → 30s to CI, catches plugin regressions
-- Add a `scripts/install-local.mjs` script that automates `cp plugin/ command/ ~/.config/opencode/`
-- Document model ID case sensitivity in README
+- Document model ID case sensitivity in README ✅ (done)
+- Create a `scripts/install-local.mjs` script to automate `cp` of bundled file
 
 ### Medium effort
-- Publish to npm with a GitHub Actions release workflow (trigger on git tag)
-- Add `--verbose` / debug logging to HappyHorse poll loop for user visibility
-- Add a `reasoningEffort` integration test that confirms the parameter reaches QwenCloud
+- Publish to npm with a GitHub Actions release workflow ✅ (infrastructure ready)
+- Add `--verbose` / debug logging to HappyHorse poll loop
+- Test `reasoningEffort` against a real opencode version
 
 ### High effort
-- Implement model variants in `opencode.json` (e.g., deepseek-v4-pro at high vs max effort)
-- Add retry logic to Wan and HappyHorse download phases (with exponential backoff)
-- Build an automated health check that verifies the plugin endpoints periodically
-  (e.g., weekly GitHub Actions cron job)
+- Implement model variants in `opencode.json`
+- Add retry logic to Wan and HappyHorse download phases
+- Build automated health check (weekly GitHub Actions cron)
 
 ## Security
 
 - **API key in env var** — `QWENCLOUD_API_KEY` is read from environment.
-  No key stored in files. No key logged (error messages show HTTP status,
-  not headers).
-- **No secret scanning in CI** — tokens are never committed, so a
-  secret scanner would have nothing to find.
-- **MIT license** — no copyleft concerns for downstream consumers.
+  No key stored in files. `requireApiKey()` validates early.
+- **MIT license** — no copyleft concerns.
 
 ## Performance
 
-- **Plugin is lightweight.** No heavy deps, no DB calls. All operations
-  are API calls + file I/O.
-- **HappyHorse polling is conservative.** 15s interval, 40 attempts max
-  (~10 min). HappyHorse videos typically complete in 2-5 minutes, so
-  this is generous headroom.
-- **Image/video downloads use streaming `arrayBuffer()`.** Large files
-  are buffered in memory (appropriate for images; videos could be large
-  but HappyHorse outputs are typically <50MB).
+- **Plugin is lightweight.** No heavy deps, no DB calls.
+- **HappyHorse polling is conservative.** 15s interval, 40 attempts max.
+- **Image/video downloads use streaming `arrayBuffer()`.** Buffered in memory.
 
 ## Fragile areas
 
-1. **API response parsing** — if QwenCloud changes the response shape
-   (e.g., `output.choices[0].message.content[0].image` for Wan, or
-   `output.video_url` for HappyHorse), the plugin breaks. Type guards
-   provide early error messages but don't prevent the breakage.
+1. **API response parsing** — if QwenCloud changes response shape, the plugin
+   breaks. Type guards provide early error messages but don't prevent breakage.
 
-2. **`fetch-models.mjs` model filter** ✅ — fixed: `isNonChat` now uses
-   `startsWith(`${family}-`)` + exact match instead of substring
-   `includes()`, preventing false positives like `"swan-7b"` matching `"wan"`.
+2. **`fetch-models.mjs` model filter** ✅ — fixed: uses `startsWith(`${family}-`)`
+   + exact match instead of substring `includes()`.
 
-3. **Config sync across 4 locations** — model display names must stay
-   in sync across `opencode.json`, `examples/opencode.inline-key.json`,
-   README, and `fetch-models.mjs` `KNOWN_NAMES`. A manual process with
-   no automated verification. `validate.mjs` checks structure but not
-   name consistency across files.
+3. **Config sync across 4 locations** — model display names must stay in sync
+   across `opencode.json`, `examples/opencode.inline-key.json`, README, and
+   `fetch-models.mjs` `KNOWN_NAMES`. Manual process, no automated verification.
 
-4. **Url imports in test files** ✅ — fixed: `tests/plugin/utils.test.ts`
-   now uses extensionless import `"../../plugin/utils"`, consistent with
-   the rest of the project.
+4. **Url imports in test files** ✅ — fixed: extensionless import in
+   `tests/plugin/utils.test.ts`.
+
+5. **Single-file bundler** — `bundle-plugin.mjs` uses line-based text
+   replacement rather than AST parsing. Could break if compiled output
+   format changes (e.g., TypeScript changes its emit style for `export`
+   declarations). Currently stable.

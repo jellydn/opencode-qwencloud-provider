@@ -13,8 +13,7 @@
 
 ### Runtime (`dependencies`)
 
-- *None.* The chat provider is purely JSON config (`opencode.json`). The
-  plugin (`plugin/`) is compiled to `dist/` and runs in opencode's context.
+- *None.* The chat provider is purely JSON config (`opencode.json`). The plugin is compiled to `dist/` and bundled into a single file for opencode auto-discovery.
 
 ### Peer dependencies
 
@@ -22,8 +21,7 @@
 | ------------------------ | -------- | ------------------------------------------------------------------ |
 | `@opencode-ai/plugin`    | ^1.18.0  | TypeScript types + `tool()` helper for registering custom tools     |
 
-`peerDependenciesMeta.optional` is `false` — the plugin cannot function
-without opencode's plugin API at runtime.
+`peerDependenciesMeta.optional` is `false` — the plugin cannot function without opencode's plugin API at runtime.
 
 ### Dev dependencies
 
@@ -31,19 +29,39 @@ without opencode's plugin API at runtime.
 | ------------------------ | -------- | ------------------------------------------------------------------ |
 | `@opencode-ai/plugin`    | ^1.18.0  | Used for type-checking and tests                                   |
 | `@types/node`            | ^20.0.0  | Node.js type definitions                                           |
-| `typescript`             | ^5.5.0   | Compiler                                           |
+| `bumpp`                  | ^12.0.0  | Automated version bumping, commit, push, and tagging               |
+| `oxfmt`                  | ^0.59.0  | Fast code formatter (successor to dprint)                         |
+| `oxlint`                 | ^1.71.0  | Fast TypeScript linter with unicorn, import, and oxc plugins       |
+| `typescript`             | ^5.5.0   | Compiler                                                           |
 | `vitest`                 | ^4.0.0   | Test runner + assertions + mocking                                 |
 
-### Scripts (zero-dependency Node ESM)
+## Scripts
 
-| Script                  | File                      | Dependencies    | Purpose                                    |
-| ----------------------- | ------------------------- | --------------- | ------------------------------------------ |
-| `fetch-models.mjs`      | `scripts/fetch-models.mjs`| Node `fs`, `path`, `url` | Query /models, regenerate model list       |
-| `validate.mjs`          | `scripts/validate.mjs`    | Node `fs`, `path`, `url` | Sanity-check JSON configs                  |
-| `smoke-test.mjs`        | `scripts/smoke-test.mjs`  | Node `fetch` (built-in) | 4 live API checks (basic, stream, tool call, 2nd model) |
+### Zero-dependency Node ESM scripts (`.mjs`)
 
-All scripts are plain ESM (`.mjs`) with explicit `node:` imports. No
-`node_modules` needed — run with `node` directly.
+| Script                  | File                      | Purpose                                    |
+| ----------------------- | ------------------------- | ------------------------------------------ |
+| `fetch-models.mjs`      | `scripts/fetch-models.mjs`| Query /models endpoint, regenerate model list for opencode.json |
+| `validate.mjs`          | `scripts/validate.mjs`    | Sanity-check JSON configs have required fields |
+| `smoke-test.mjs`        | `scripts/smoke-test.mjs`  | 4 live API checks (basic, stream, tool call, 2nd model) |
+
+### Build pipeline scripts
+
+| Script                  | File                      | Purpose                                    |
+| ----------------------- | ------------------------- | ------------------------------------------ |
+| `fix-extensions.mjs`    | `scripts/fix-extensions.mjs` | Post-tsc: adds `.js` extensions to relative ESM imports for Bun compatibility |
+| `bundle-plugin.mjs`     | `scripts/bundle-plugin.mjs`  | Post-build: concatenates all compiled files into a single `.js` bundle for opencode auto-discovery |
+
+### npm scripts
+
+| Command               | Pipeline                                     |
+| --------------------- | -------------------------------------------- |
+| `build`               | `rm -rf dist && tsc && node scripts/fix-extensions.mjs && node scripts/bundle-plugin.mjs` |
+| `lint`                | `oxlint --config .oxlintrc.json plugin/ tests/` |
+| `format`              | `oxfmt --write plugin/ tests/`               |
+| `format:check`        | `oxfmt --check plugin/ tests/`               |
+| `release`             | `bumpp --commit --push --tag` (auto-detect)  |
+| `release:patch`       | `bumpp --commit --push --tag patch`          |
 
 ## Configuration files
 
@@ -51,17 +69,11 @@ All scripts are plain ESM (`.mjs`) with explicit `node:` imports. No
 | ---------------------- | ------------------------------------------------- |
 | `opencode.json`        | Main provider config (chat models, env-var auth)  |
 | `examples/opencode.inline-key.json` | Fallback config with inline API key placeholder |
-| `tsconfig.json`        | TypeScript compiler settings (target ES2022, strict, bundler module resolution) |
-| `vitest.config.ts`     | Vitest configuration (tests in `tests/**/*.test.ts`, globals on) |
-| `.github/workflows/validate.yml` | CI: `node scripts/validate.mjs` on push/PR to main |
+| `tsconfig.json`        | TypeScript: ES2022, strict, bundler, plugin/ only |
+| `vitest.config.ts`     | Vitest: include `tests/**/*.test.ts`, globals on  |
+| `.oxlintrc.json`       | oxlint: typescript, unicorn, oxc, import plugins  |
+| `.oxfmtrc.json`        | oxfmt: default config                             |
+| `.github/workflows/validate.yml` | CI: 3 parallel jobs (validate, lint+format, typecheck+test) |
+| `.github/workflows/release.yml`  | CI: npm publish on `v*` tags with provenance     |
 | `command/wan.md`       | Slash-command: `/wan <prompt>` routes to `wan` tool |
 | `command/happyhorse.md`| Slash-command: `/happyhorse <prompt>` routes to `happyhorse` tool |
-
-## Key version constraints
-
-- **Node ≥ 20**: `Buffer`, `fetch`, `AbortSignal.timeout`, ESM are all
-  built-in; no polyfills needed.
-- **TypeScript 5.5+**: `"moduleResolution": "bundler"` for extensionless
-  ESM imports (no `.js` suffixes in source).
-- **ES2022 target**: `AbortSignal.timeout` (ES2022 static method),
-  top-level `await` in scripts.

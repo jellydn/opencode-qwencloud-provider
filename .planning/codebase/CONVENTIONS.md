@@ -2,113 +2,87 @@
 
 ## Language & module system
 
-- **ESM only.** All source uses `import`/`export`. `package.json` has
-  `"type": "module"`. Scripts use `.mjs` extension for explicitness.
-- **Extensionless imports.** TypeScript source uses `import ... from "./env"`
-  (no `.js` suffix). The `"moduleResolution": "bundler"` tsconfig option
-  enables this.
-- **Explicit `node:` prefix.** All Node.js built-in imports use the
-  `node:` prefix: `import { writeFile } from "node:fs/promises"`.
+- **ESM only.** `"type": "module"` in `package.json`. Scripts use `.mjs`.
+- **Extensionless imports** in TypeScript source (`from "./env"`, not `.js`).
+  `moduleResolution: "bundler"` enables this.
+- **Explicit `node:` prefix** for all Node.js built-in imports.
+- **Compiled output fix**: `fix-extensions.mjs` adds `.js` to relative imports
+  in `dist/` because Bun requires extensions for ESM.
 
 ## TypeScript
 
-- **Strict mode** (`"strict": true` in `tsconfig.json`)
+- **Strict mode** (`"strict": true`)
 - **ES2022 target** for `AbortSignal.timeout` and modern built-ins
-- **All exports are typed.** Plugin modules export interfaces for options
-  and results (`WanOptions`, `WanResult`, `HappyHorseOptions`,
-  `HappyHorseResult`).
-- **`unknown` first, narrow later.** API responses are parsed as `unknown`,
-  then narrowed with type guards (`isRecord`, `stringValue`, `Array.isArray`).
-  No `any` casting except in tests (`fetchMock as any`).
-- **`Record<string, unknown>`** is the preferred "bag of unknowns" type
-  for parsed JSON.
-- **`declare` only when needed.** The plugin uses `@opencode-ai/plugin`
-  types directly — no ambient declarations.
+- **All exports are typed.** Plugin modules export interfaces for options and results.
+- **`unknown` first, narrow later.** API responses parsed as `unknown`, narrowed
+  with type guards. No `any` casting except in tests.
+- **`Record<string, unknown>`** is the preferred "bag of unknowns" type.
 
 ## Error handling
 
-- **Validate early, throw descriptively.** Every function validates inputs
-  before making API calls (missing key, unsupported model, missing imageUrl
-  for i2v models).
-- **Error messages include context.** API errors include HTTP status + first
-  300 chars of response body. Validation errors list supported values.
-- **No swallowing.** Errors propagate up. The plugin's `execute()` functions
-  let exceptions reach opencode for display to the user.
-- **Fetch timeouts.** All `fetch` calls use `AbortSignal.timeout()` with
-  reasonable limits — no indefinite hangs.
-- **Script exit codes.** Scripts use semantic exit codes: `0` success,
-  `1` missing key/config, `2` fetch/parse/test failure.
+- **Validate early, throw descriptively.** Every function validates inputs before
+  API calls.
+- **Error messages include context.** API errors include HTTP status + first 300
+  chars of response body. Validation errors list supported values.
+- **Fetch timeouts.** All `fetch` calls use `AbortSignal.timeout()` — Wan 60s/120s,
+  HappyHorse 60s/30s/180s.
+- **Script exit codes.** Semantic: `0` success, `1` missing key/config, `2` failure.
 
 ## Patterns
 
 ### Dependency injection for testability
 
-Plugin functions accept optional `fetchImpl` and `apiKey` parameters,
-allowing tests to inject mock fetch and fake keys without touching
-environment variables:
-
 ```typescript
-// In production:
-const result = await generateWanImage("a cat");
-// In tests:
-const result = await generateWanImage("a cat", {
-  apiKey: "fake-key",
-  fetchImpl: mockFetch,
-});
+// Production: reads from QWENCLOUD_API_KEY env var
+const key = requireApiKey();
+// Tests: inject fake key via options
+const key = requireApiKey("test-key-123");
 ```
 
-### Type guards for API responses
+Same pattern for `fetchImpl` — all API functions accept an optional mock fetch.
 
-All JSON response parsing follows the same pattern:
+### Type guards for API responses
 
 ```typescript
 const data: unknown = await response.json();
 if (!isRecord(data)) throw new Error("Unexpected response format");
 const output = data.output;
 if (!isRecord(output)) throw new Error("Missing output field");
-// ... further narrowing
 ```
 
-### Sync vs async API patterns
+### Single-file bundling for opencode
 
-- **Wan** (sync): `generateWanImage()` → `downloadWanImage()`. Both return
-  promises but the API itself is synchronous (one request → immediate result).
-- **HappyHorse** (async): `submitTask()` → `pollTask()` (loop) →
-  `downloadVideo()`. The polling loop uses `setTimeout` + `await` — no
-  busy-waiting.
+Opencode auto-discovers ALL `.js` files in `plugins/`. Our build produces a
+single `opencode-qwencloud-provider.js` that exports only Plugin functions.
+The bundler (`bundle-plugin.mjs`) replaces `export const` → `const`,
+`export function` → `function`, etc., preserving multi-line declarations.
 
-### Tool registration pattern
+## Linting & formatting
 
-Each plugin is a separate named export, so users can install one or both:
+- **oxlint** (`.oxlintrc.json`): typescript, unicorn, oxc, import plugins.
+  Run `npm run lint` before committing.
+- **oxfmt** (`.oxfmtrc.json`): default config. Run `npm run format` to auto-fix,
+  `npm run format:check` to verify in CI.
 
-```typescript
-export const QwenCloudWanPlugin: Plugin = async (ctx) => {
-  return {
-    tool: {
-      wan: tool({ description, args: { ... }, execute(args, toolCtx) { ... } }),
-    },
-  };
-};
-```
+## Version management
 
-The `tool()` helper creates a Zod-typed tool definition. `tool.schema`
-provides `.string()`, `.number()`, `.describe()` chainable methods.
+- **bumpp** handles bumping, committing, pushing, and tagging.
+  Use `npm run release` (auto-detect) or `release:patch/minor/major`.
+- Semantic versioning per [Keep a Changelog](https://keepachangelog.com).
 
 ## Git & CI
 
 - **No API keys committed.** `opencode.json` uses `{env:QWENCLOUD_API_KEY}`.
-- **Conventional commits.** Commits follow `feat:`, `fix:`, `docs:`, `chore:`
-  prefixes.
-- **CI validates configs on every push/PR** (`.github/workflows/validate.yml`).
-- **Config sync rule:** When editing the model list, update all four
-  locations: `opencode.json`, `examples/opencode.inline-key.json`,
-  README model table, and `scripts/fetch-models.mjs` `KNOWN_NAMES`.
+- **Conventional commits.** `feat:`, `fix:`, `refactor:`, `docs:`, `chore:` prefixes.
+- **CI runs on every push/PR** — 3 parallel jobs: validate configs, lint+format, typecheck+test.
+- **Release on tags** — `v*` tags trigger npm publish with provenance.
+- **Config sync rule:** When editing model list, update all four locations:
+  `opencode.json`, `examples/opencode.inline-key.json`, README model table,
+  `fetch-models.mjs` `KNOWN_NAMES`.
 
 ## Documentation
 
-- **`AGENTS.md`** is the internal/developer doc (layout, commands,
-  architecture, gotchas).
-- **`README.md`** is the user-facing doc (setup, models, scripts, FAQ).
-- **`CHANGELOG.md`** follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+- **`AGENTS.md`** — internal/developer doc (layout, commands, architecture, gotchas).
+- **`README.md`** — user-facing doc (setup, models, scripts, Wan/HappyHorse plugin).
+- **`CHANGELOG.md`** — follows Keep a Changelog.
 - JSDoc comments on all exported functions, interfaces, and modules.
-  `@module`, `@param`, `@returns` tags used consistently.

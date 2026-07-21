@@ -51,7 +51,7 @@
     "fetch-models": "node scripts/fetch-models.mjs",
     "validate": "node scripts/validate.mjs",
     "smoke-test": "node scripts/smoke-test.mjs",
-    "build": "rm -rf dist && tsc",
+    "build": "rm -rf dist && tsc && node scripts/fix-extensions.mjs && node scripts/bundle-plugin.mjs",
     "typecheck": "tsc --noEmit --project tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",

@@ -27,6 +27,8 @@
  * @module smoke-test
  */
 
+import { readFileSync, existsSync } from "node:fs";
+
 // ─── Args & config ──────────────────────────────────────────────────────────
 
 // Must stay in sync with the baseURL in opencode.json, examples/, and
@@ -280,10 +282,28 @@ if (args.help) {
   process.exit(0);
 }
 
-const apiKey = process.env.QWENCLOUD_API_KEY?.trim();
+function resolveConfigApiKey() {
+  try {
+    const home = process.env.HOME ?? process.env.USERPROFILE ?? "~";
+    const configPath = `${home}/.config/opencode/opencode.json`;
+    if (!existsSync(configPath)) return undefined;
+    const raw = readFileSync(configPath, "utf8");
+    const config = JSON.parse(raw);
+    const apiKey = config?.provider?.qwencloud?.options?.apiKey;
+    if (typeof apiKey === "string" && !apiKey.startsWith("{")) {
+      return apiKey.trim() || undefined;
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+const apiKey = process.env.QWENCLOUD_API_KEY?.trim() || resolveConfigApiKey();
 if (!apiKey) {
-  console.error("✗ QWENCLOUD_API_KEY environment variable is not set.");
-  console.error("  Get a key from your QwenCloud Token Plan dashboard.");
+  console.error("✗ QWENCLOUD_API_KEY is not set.");
+  console.error("  Set the env var or use /connect in opencode to store an inline key");
+  console.error("  in ~/.config/opencode/opencode.json (provider.qwencloud.options.apiKey).");
   process.exit(1);
 }
 

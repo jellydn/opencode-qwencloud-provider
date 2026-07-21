@@ -1,3 +1,5 @@
+import { readFileSync, existsSync } from "node:fs";
+
 /**
  * QwenCloud Wan/HappyHorse plugin — constants and environment helpers.
  *
@@ -64,14 +66,54 @@ export function resolveApiKey(
 }
 
 /**
- * Resolve the API key with an optional override.  Returns the resolved key
- * or throws if no key is available.  The override (e.g. from plugin options)
- * takes precedence over the environment variable.
+ * Attempt to read an inline API key from opencode's provider config.
+ * Returns undefined if the config uses {env:...} interpolation or doesn't
+ * exist.
+ */
+function readConfigApiKey(): string | undefined {
+  try {
+    const home = process.env.HOME ?? process.env.USERPROFILE ?? "~";
+    const configPath = `${home}/.config/opencode/opencode.json`;
+    if (!existsSync(configPath)) return undefined;
+
+    const raw = readFileSync(configPath, "utf8");
+    const config = JSON.parse(raw) as Record<string, unknown>;
+    const provider = config.provider as Record<string, Record<string, unknown>> | undefined;
+    const qwencloud = provider?.qwencloud;
+    const options = qwencloud?.options as Record<string, string> | undefined;
+    const apiKey = options?.apiKey;
+
+    // Only use inline keys (plain strings), not {env:VAR} interpolation.
+    if (typeof apiKey === "string" && !apiKey.startsWith("{")) {
+      return apiKey.trim() || undefined;
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Resolve the API key from multiple sources.  Priority:
+ *   1. Explicit override (plugin tool options)
+ *   2. QWENCLOUD_API_KEY environment variable
+ *   3. Inline apiKey in opencode.json provider config (from /connect)
+ *
+ * Throws if no key is found in any source.
  */
 export function requireApiKey(override?: string): string {
-  const key = (override?.trim() || resolveApiKey()) ?? "";
+  const key =
+    override?.trim() ||
+    resolveApiKey() ||
+    readConfigApiKey() ||
+    "";
+
   if (!key) {
-    throw new Error("No QwenCloud API key found. Set QWENCLOUD_API_KEY.");
+    throw new Error(
+      "No QwenCloud API key found. Set QWENCLOUD_API_KEY env var, " +
+        "use /connect in opencode, or paste a key into opencode.json " +
+        "(provider.qwencloud.options.apiKey).",
+    );
   }
   return key;
 }
